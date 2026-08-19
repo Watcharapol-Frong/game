@@ -64,7 +64,7 @@ export class MeenFocusEngine {
     if (this.state !== 'AWAITING_INPUT') throw new Error('Game is not awaiting input.');
 
     const currentTrial = this.trialSequence[this.trialIndex];
-    let reactionTimeMs = response === 'timeout' ? null : performance.now() - this.stimulusTimestamp;
+    let reactionTimeMs = response === 'timeout' ? null : Math.round(performance.now() - this.stimulusTimestamp);
 
     // Timeout enforcement: never trust a response that arrived after the RT ceiling —
     // force it to a timeout regardless of what the caller reported.
