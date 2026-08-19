@@ -27,7 +27,12 @@ export interface Game2Metrics {
   perseverativeErrorRate: number; // 0.0–1.0
 }
 
-export function computeRadarScore(game1: Game1Metrics, game2?: Game2Metrics): RadarScore {
+export interface Game3Metrics {
+  meanCongruentRtMs: number;    // processing speed proxy — lower = faster
+  incongruentAccuracy: number;  // 0.0–1.0 — sustained attention proxy
+}
+
+export function computeRadarScore(game1: Game1Metrics, game2?: Game2Metrics, game3?: Game3Metrics): RadarScore {
   const maxPumps = 32;
   const riskTaking = clamp100((game1.adjustedAveragePumps / maxPumps) * 100);
   const impulseControl = clamp100(
@@ -39,12 +44,22 @@ export function computeRadarScore(game1: Game1Metrics, game2?: Game2Metrics): Ra
     ? clamp100((game2.categoriesCompleted / 6) * 100 * (1 - game2.perseverativeErrorRate))
     : 0;
 
+  // processingSpeed: 400 ms → 100, 1200 ms → 0
+  const processingSpeed = game3
+    ? clamp100(((1200 - game3.meanCongruentRtMs) / 800) * 100)
+    : 0;
+
+  // sustainedAttention: incongruent accuracy maps directly to 0–100
+  const sustainedAttention = game3
+    ? clamp100(game3.incongruentAccuracy * 100)
+    : 0;
+
   return {
     riskTaking,
     impulseControl,
     cognitiveFlexibility,
-    prosociality: 0,       // populated when game4 is implemented
-    processingSpeed: 0,    // populated when game3 is implemented
-    sustainedAttention: 0, // populated when game3 is implemented
+    prosociality: 0,
+    processingSpeed,
+    sustainedAttention,
   };
 }

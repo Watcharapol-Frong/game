@@ -2,7 +2,9 @@ import './style.css';
 import { BartGameEngine } from './games/game1-bart/engine';
 import type { Game1Payload } from './games/game1-bart/types';
 import { WcstGameEngine } from './games/game2-wcst/engine';
-import type { Game2Payload, WagashiCard, WagashiColor, WagashiShape } from './games/game2-wcst/types';
+import type { Game2Payload, WagashiCard, WagashiShape } from './games/game2-wcst/types';
+import { MeenFocusEngine } from './games/game3-flanker/engine';
+import type { Game3Payload, FlankerTrial, TargetDirection } from './games/game3-flanker/types';
 
 const MAX_PUMPS = 32;
 const TOTAL_TRIALS = 20;
@@ -20,6 +22,12 @@ let canvasCtx: CanvasRenderingContext2D | null = null;
 let wcstEngine: WcstGameEngine;
 let wcstBusy = false;
 let savedGame2Payload: Game2Payload | null = null;
+
+// ---- Runtime state — Game 3 ----
+let flankerEngine: MeenFocusEngine;
+let flankerBusy = false;
+let flankerTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+let savedGame3Payload: Game3Payload | null = null;
 
 // ---- Helpers ----
 function qs<T extends HTMLElement>(sel: string): T | null {
@@ -53,6 +61,10 @@ function renderIntro() {
             <span style="font-size:22px">🍡</span>
             <span style="text-align:left"><strong>Game 2 — Poom's Wagashi Sorting</strong><br><small style="font-weight:400;opacity:.8">Cognitive flexibility · WCST</small></span>
           </button>
+          <button id="game3-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
+            <span style="font-size:22px">🎯</span>
+            <span style="text-align:left"><strong>Game 3 — Meen's Focus Mode</strong><br><small style="font-weight:400;opacity:.8">Selective attention · Flanker</small></span>
+          </button>
         </div>
         <p class="session-note">Results export as a JSON payload after each session</p>
       </div>
@@ -60,6 +72,7 @@ function renderIntro() {
   `;
   qs<HTMLButtonElement>('#game1-btn')!.addEventListener('click', renderGame1Intro);
   qs<HTMLButtonElement>('#game2-btn')!.addEventListener('click', renderGame2Intro);
+  qs<HTMLButtonElement>('#game3-btn')!.addEventListener('click', renderGame3Intro);
 }
 
 // ============================================================
@@ -912,6 +925,251 @@ async function exportGame2JSON() {
     if (!dl) { reset('Download unavailable'); return; }
     const json = JSON.stringify(savedGame2Payload, null, 2);
     await dl.save({ filename: `${savedGame2Payload.sessionId}.json`, data: json });
+    reset('Downloaded ✓');
+  } catch (err: any) {
+    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
+  }
+}
+
+// ============================================================
+// GAME 3 — MEEN'S FOCUS MODE (Flanker Task)
+// ============================================================
+
+const FLANKER_TOTAL = 48;
+
+function flankerArrowHTML(direction: TargetDirection): string {
+  return direction === 'left' ? '←' : '→';
+}
+
+function flankerCardRowHTML(trial: FlankerTrial): string {
+  const center = trial.targetDirection;
+  const flanker: TargetDirection = trial.condition === 'congruent' ? center : (center === 'left' ? 'right' : 'left');
+  const cards = [flanker, flanker, center, flanker, flanker];
+  return cards
+    .map((dir, i) => {
+      const isCenter = i === 2;
+      const cls = isCenter ? 'flanker-card center-card' : 'flanker-card notification';
+      const label = isCenter ? 'Target' : 'Notif';
+      return `<div class="${cls}" aria-label="${label}" data-dir="${dir}"><span class="flanker-arrow">${flankerArrowHTML(dir)}</span></div>`;
+    })
+    .join('');
+}
+
+// ---- Game 3 intro screen ----
+function renderGame3Intro() {
+  const app = document.getElementById('app')!;
+  app.innerHTML = `
+    <div class="screen intro-screen">
+      <div class="intro-inner">
+        <div class="logo-mark">🎯</div>
+        <h1 class="game-title">Meen's Focus Mode</h1>
+        <p class="game-subtitle">A Psychometric Session · Flanker Task</p>
+        <div class="persona-card">
+          <p>มีน (Meen) is studying for her university entrance exam. Her phone
+          never stops buzzing — every notification pulls her attention away from
+          the lesson summary she needs to read.</p>
+          <p><em>Can you focus on what matters and ignore the noise?</em></p>
+        </div>
+        <div class="intro-rules">
+          <div class="rule"><span class="rule-num">1</span>Five cards appear — focus on the <strong>center card</strong>.</div>
+          <div class="rule"><span class="rule-num">2</span>Press <kbd>←</kbd> or <kbd>→</kbd> (or <kbd>A</kbd> / <kbd>D</kbd>) to match its arrow.</div>
+          <div class="rule"><span class="rule-num">3</span>The surrounding notifications may point a different way — ignore them.</div>
+        </div>
+        <div class="flanker-demo-row">
+          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
+          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
+          <div class="flanker-card center-card"><span class="flanker-arrow">←</span></div>
+          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
+          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
+        </div>
+        <button id="begin-flanker-btn" class="btn btn-primary">Begin Session</button>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
+        <p class="session-note">48 trials &nbsp;·&nbsp; 1.2 s per stimulus</p>
+      </div>
+    </div>
+  `;
+  qs<HTMLButtonElement>('#begin-flanker-btn')!.addEventListener('click', startGame3);
+  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
+}
+
+// ---- Start game 3 ----
+function startGame3() {
+  flankerEngine = new MeenFocusEngine(genSessionId());
+  flankerEngine.initSequence();
+  flankerBusy = false;
+  flankerTimeoutHandle = null;
+  const firstTrial = flankerEngine.startGame();
+  startGame3Trial(firstTrial);
+}
+
+// ---- Render a trial ----
+function renderGame3Trial(trial: FlankerTrial) {
+  const app = document.getElementById('app')!;
+  const trialIdx = flankerEngine.getCurrentTrialIndex() + 1;
+  app.innerHTML = `
+    <div class="screen flanker-trial-screen" id="flanker-screen">
+      <div class="hud">
+        <div class="hud-trial">
+          <span class="hud-label">Trial</span>
+          <span class="hud-value" id="flanker-trial-num">${trialIdx} <span class="hud-of">of ${FLANKER_TOTAL}</span></span>
+        </div>
+        <div class="hud-score">
+          <span class="hud-label">Condition</span>
+          <span class="hud-value" id="flanker-condition" style="font-size:13px;text-transform:capitalize;color:var(--text-faint)">${trial.condition}</span>
+        </div>
+      </div>
+      <div class="flanker-stimulus-area">
+        <div class="flanker-card-row" id="flanker-card-row">
+          ${flankerCardRowHTML(trial)}
+        </div>
+        <div class="flanker-key-hint">Press <kbd>←</kbd> or <kbd>→</kbd></div>
+        <div class="flanker-feedback" id="flanker-feedback" aria-live="assertive"></div>
+      </div>
+    </div>
+  `;
+}
+
+// ---- Start a trial (render + set timeout + listen keys) ----
+function startGame3Trial(trial: FlankerTrial) {
+  renderGame3Trial(trial);
+  flankerBusy = false;
+  document.addEventListener('keydown', handleFlankerKey);
+  flankerTimeoutHandle = setTimeout(() => {
+    submitFlankerResponse('timeout');
+  }, 1200);
+}
+
+function handleFlankerKey(e: KeyboardEvent) {
+  if (flankerBusy) return;
+  let response: TargetDirection | null = null;
+  if (e.key === 'ArrowLeft'  || e.key === 'a' || e.key === 'A') response = 'left';
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') response = 'right';
+  if (!response) return;
+  e.preventDefault();
+  if (flankerTimeoutHandle !== null) { clearTimeout(flankerTimeoutHandle); flankerTimeoutHandle = null; }
+  submitFlankerResponse(response);
+}
+
+function submitFlankerResponse(response: TargetDirection | 'timeout') {
+  if (flankerBusy) return;
+  flankerBusy = true;
+  document.removeEventListener('keydown', handleFlankerKey);
+
+  const result = flankerEngine.handleResponse(response);
+
+  // Show feedback
+  const screen = document.getElementById('flanker-screen');
+  const fb = document.getElementById('flanker-feedback');
+  if (screen && fb) {
+    if (result.isCorrect) {
+      screen.classList.add('glow-correct');
+      fb.textContent = '✓';
+      fb.className = 'flanker-feedback feedback-correct';
+    } else {
+      screen.classList.add('shake-wrong');
+      fb.textContent = response === 'timeout' ? '⏱ Time!' : '✗';
+      fb.className = 'flanker-feedback feedback-wrong';
+    }
+  }
+
+  // After feedback (500ms) + ITI (300ms)
+  setTimeout(() => {
+    if (result.isGameOver) {
+      renderGame3GameOver();
+    } else {
+      startGame3Trial(result.nextTrial!);
+    }
+  }, 800);
+}
+
+// ---- Game 3 game-over screen ----
+function renderGame3GameOver() {
+  savedGame3Payload = flankerEngine.getPayload();
+  const m = savedGame3Payload.summaryMetrics;
+  const fxStr = m.flankerEffectMs >= 0 ? `+${m.flankerEffectMs}` : String(m.flankerEffectMs);
+  const pesStr = m.postErrorSlowingMs >= 0 ? `+${m.postErrorSlowingMs}` : String(m.postErrorSlowingMs);
+
+  const app = document.getElementById('app')!;
+  app.innerHTML = `
+    <div class="screen wcst-gameover-screen">
+      <div class="wcst-gameover-inner">
+        <div class="logo-mark">🎯</div>
+        <h2 class="gameover-title">Session Complete</h2>
+        <p class="gameover-sub">Here's how Meen managed distractions.</p>
+
+        <div class="metrics-table">
+          <div class="metric-row highlight">
+            <span class="metric-label">Overall Accuracy</span>
+            <span class="metric-value gold">${m.totalCorrect} / ${m.totalTrials}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Congruent Accuracy</span>
+            <span class="metric-value">${(m.congruentAccuracy * 100).toFixed(0)}%</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Incongruent Accuracy</span>
+            <span class="metric-value">${(m.incongruentAccuracy * 100).toFixed(0)}%</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Flanker Effect <em>(RT cost)</em></span>
+            <span class="metric-value">${fxStr} ms</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Congruent Avg RT</span>
+            <span class="metric-value">${m.meanCongruentRtMs} ms</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Incongruent Avg RT</span>
+            <span class="metric-value">${m.meanIncongruentRtMs} ms</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Post-Error Slowing</span>
+            <span class="metric-value">${pesStr} ms</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Timeouts</span>
+            <span class="metric-value ${m.timeouts > 0 ? 'danger' : ''}">${m.timeouts} &nbsp;<small style="font-weight:400;color:var(--text-faint)">(${(m.timeoutRate * 100).toFixed(0)}%)</small></span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Impulsive Errors <em>(&lt;200 ms)</em></span>
+            <span class="metric-value ${m.impulsiveErrorCount > 0 ? 'danger' : ''}">${m.impulsiveErrorCount}</span>
+          </div>
+        </div>
+
+        <div class="gameover-actions">
+          <button id="export-flanker-btn" class="btn btn-primary">Export Payload (JSON)</button>
+          <button id="replay-flanker-btn" class="btn btn-secondary">Play Again</button>
+          <button id="home-flanker-btn" class="btn btn-secondary">← Game Select</button>
+        </div>
+        <p class="export-note">JSON payload conforms to Game3Payload (Flanker) schema.</p>
+      </div>
+    </div>
+  `;
+
+  qs<HTMLButtonElement>('#export-flanker-btn')!.addEventListener('click', exportGame3JSON);
+  qs<HTMLButtonElement>('#replay-flanker-btn')!.addEventListener('click', renderGame3Intro);
+  qs<HTMLButtonElement>('#home-flanker-btn')!.addEventListener('click', renderIntro);
+}
+
+async function exportGame3JSON() {
+  if (!savedGame3Payload) return;
+  const btn = qs<HTMLButtonElement>('#export-flanker-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Exporting…';
+
+  const reset = (label: string) => {
+    btn.textContent = label;
+    btn.style.opacity = '0.75';
+    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
+  };
+
+  try {
+    // @ts-ignore — window.claude injected by Artifact runtime
+    const dl = await window.claude?.use?.('downloads') ?? null;
+    if (!dl) { reset('Download unavailable'); return; }
+    const json = JSON.stringify(savedGame3Payload, null, 2);
+    await dl.save({ filename: `${savedGame3Payload.sessionId}.json`, data: json });
     reset('Downloaded ✓');
   } catch (err: any) {
     reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
