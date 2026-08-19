@@ -1167,3 +1167,34 @@ body {
   background: var(--gold-faint);
   color: var(--gold);
 }
+
+/* ================================================================
+   Combined Session Summary — Radar Chart
+   ================================================================ */
+
+.summary-screen {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.summary-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 32px 24px;
+}
+
+.summary-canvas-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+#radar-canvas {
+  max-width: 100%;
+}

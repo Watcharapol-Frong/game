@@ -7,6 +7,8 @@ import { MeenFocusEngine } from './games/game3-flanker/engine';
 import type { Game3Payload, FlankerTrial, TargetDirection } from './games/game3-flanker/types';
 import { KongNeighborhoodEngine } from './games/game4-pgg/engine';
 import type { Game4Payload, PggRoundLog } from './games/game4-pgg/types';
+import { calculateRadarProfile } from './analytics/pipeline';
+import type { CompleteAssessmentPayload, RadarChartOutput } from './analytics/pipeline';
 
 const MAX_PUMPS = 32;
 const TOTAL_TRIALS = 20;
@@ -48,6 +50,23 @@ function genSessionId(): string {
   return `sess_ktp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// One shared session ID for every game played in this sitting, so a combined
+// summary can be attributed to a single session.
+const appSessionId = genSessionId();
+
+function allGamesComplete(): boolean {
+  return !!(savedPayload && savedGame2Payload && savedGame3Payload && savedGame4Payload);
+}
+
+function combinedResultsButtonHTML(): string {
+  if (!allGamesComplete()) return '';
+  return `<button id="view-summary-btn" class="btn btn-primary" style="background:var(--gold);box-shadow:0 2px 8px rgba(185,121,32,0.30)">📊 View Combined Results</button>`;
+}
+
+function attachCombinedResultsButton(): void {
+  qs<HTMLButtonElement>('#view-summary-btn')?.addEventListener('click', renderSessionSummary);
+}
+
 // ---- Entry ----
 renderIntro();
 
@@ -80,6 +99,7 @@ function renderIntro() {
             <span style="text-align:left"><strong>Game 4 — Kong's Neighborhood Sprint</strong><br><small style="font-weight:400;opacity:.8">Prosociality · Public Goods Game</small></span>
           </button>
         </div>
+        ${combinedResultsButtonHTML()}
         <p class="session-note">Results export as a JSON payload after each session</p>
       </div>
     </div>
@@ -88,6 +108,7 @@ function renderIntro() {
   qs<HTMLButtonElement>('#game2-btn')!.addEventListener('click', renderGame2Intro);
   qs<HTMLButtonElement>('#game3-btn')!.addEventListener('click', renderGame3Intro);
   qs<HTMLButtonElement>('#game4-btn')!.addEventListener('click', renderGame4Intro);
+  attachCombinedResultsButton();
 }
 
 // ============================================================
@@ -125,7 +146,7 @@ function renderGame1Intro() {
 // TRIAL SCREEN
 // ============================================================
 function startGame() {
-  engine = new BartGameEngine(genSessionId());
+  engine = new BartGameEngine(appSessionId);
   engine.initializeGame();
   currentPumps = 0;
   isBusy = false;
@@ -367,6 +388,7 @@ function renderGameOver() {
 
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next Game — Poom's Wagashi Sorting →</button>
+          ${combinedResultsButtonHTML()}
           <button id="export-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-btn" class="btn btn-secondary">← Game Select</button>
@@ -380,6 +402,7 @@ function renderGameOver() {
   qs<HTMLButtonElement>('#export-btn')!.addEventListener('click', exportJSON);
   qs<HTMLButtonElement>('#replay-btn')!.addEventListener('click', renderGame1Intro);
   qs<HTMLButtonElement>('#home-btn')!.addEventListener('click', renderIntro);
+  attachCombinedResultsButton();
 }
 
 async function exportJSON() {
@@ -759,7 +782,7 @@ function renderGame2Intro() {
 
 // ---- Start game 2 ----
 function startGame2() {
-  wcstEngine = new WcstGameEngine(genSessionId());
+  wcstEngine = new WcstGameEngine(appSessionId);
   const firstCard = wcstEngine.initializeGame();
   wcstBusy = false;
   renderGame2Trial(firstCard);
@@ -907,6 +930,7 @@ function renderGame2GameOver() {
 
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next Game — Meen's Focus Mode →</button>
+          ${combinedResultsButtonHTML()}
           <button id="export-wcst-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-wcst-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-wcst-btn" class="btn btn-secondary">← Game Select</button>
@@ -926,6 +950,7 @@ function renderGame2GameOver() {
     renderGame2Intro();
   });
   qs<HTMLButtonElement>('#home-wcst-btn')!.addEventListener('click', renderIntro);
+  attachCombinedResultsButton();
 }
 
 async function exportGame2JSON() {
@@ -1016,7 +1041,7 @@ function renderGame3Intro() {
 
 // ---- Start game 3 ----
 function startGame3() {
-  flankerEngine = new MeenFocusEngine(genSessionId());
+  flankerEngine = new MeenFocusEngine(appSessionId);
   flankerEngine.initSequence();
   flankerBusy = false;
   flankerTimeoutHandle = null;
@@ -1177,6 +1202,7 @@ function renderGame3GameOver() {
 
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next Game — Kong's Neighborhood Sprint →</button>
+          ${combinedResultsButtonHTML()}
           <button id="export-flanker-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-flanker-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-flanker-btn" class="btn btn-secondary">← Game Select</button>
@@ -1190,6 +1216,7 @@ function renderGame3GameOver() {
   qs<HTMLButtonElement>('#export-flanker-btn')!.addEventListener('click', exportGame3JSON);
   qs<HTMLButtonElement>('#replay-flanker-btn')!.addEventListener('click', renderGame3Intro);
   qs<HTMLButtonElement>('#home-flanker-btn')!.addEventListener('click', renderIntro);
+  attachCombinedResultsButton();
 }
 
 async function exportGame3JSON() {
@@ -1260,7 +1287,7 @@ function renderGame4Intro() {
 
 // ---- Start game 4 ----
 function startGame4() {
-  pggEngine = new KongNeighborhoodEngine(genSessionId());
+  pggEngine = new KongNeighborhoodEngine(appSessionId);
   pggBusy = false;
   const roundInfo = pggEngine.startRound();
   renderGame4Round(roundInfo);
@@ -1448,7 +1475,8 @@ function renderGame4GameOver() {
         </div>
 
         <div class="gameover-actions">
-          <button id="export-pgg-btn" class="btn btn-primary">Export Payload (JSON)</button>
+          ${combinedResultsButtonHTML()}
+          <button id="export-pgg-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-pgg-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-pgg-btn" class="btn btn-secondary">← Game Select</button>
         </div>
@@ -1463,6 +1491,7 @@ function renderGame4GameOver() {
     renderGame4Intro();
   });
   qs<HTMLButtonElement>('#home-pgg-btn')!.addEventListener('click', renderIntro);
+  attachCombinedResultsButton();
 }
 
 async function exportGame4JSON() {
@@ -1484,6 +1513,244 @@ async function exportGame4JSON() {
     if (!dl) { reset('Download unavailable'); return; }
     const json = JSON.stringify(savedGame4Payload, null, 2);
     await dl.save({ filename: `${savedGame4Payload.sessionId}.json`, data: json });
+    reset('Downloaded ✓');
+  } catch (err: any) {
+    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
+  }
+}
+
+// ============================================================
+// COMBINED SESSION SUMMARY — Radar Chart + Full JSON Export
+// ============================================================
+
+function cssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function drawRadarChart(ctx: CanvasRenderingContext2D, size: number, radar: RadarChartOutput) {
+  const labels: string[][] = [
+    ['Strategic Courage', '& Risk Acumen'],
+    ['Cognitive', 'Adaptability', '& Shift'],
+    ['Selective Focus', '& Attentional', 'Control'],
+    ['Impulse &', 'Quality Control'],
+    ['Team', 'Collaboration', '& Social Trust'],
+    ['Strategic', 'Resilience', '& Boundaries'],
+  ];
+  const values = [
+    radar.axes.strategicCourage,
+    radar.axes.cognitiveAdaptability,
+    radar.axes.selectiveFocus,
+    radar.axes.impulseControl,
+    radar.axes.collaborationTrust,
+    radar.axes.strategicResilience,
+  ];
+  const N = 6;
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = size * 0.30;
+
+  const accent = cssVar('--accent') || '#2D6A4F';
+  const gold = cssVar('--gold') || '#B97920';
+  const text = cssVar('--text') || '#1B2B1E';
+  const textFaint = cssVar('--text-faint') || '#7D9B82';
+  const border = cssVar('--border') || 'rgba(45,106,79,0.15)';
+  const surface2 = cssVar('--surface-2') || '#F2F8F2';
+  const fontBody = cssVar('--font-body') || 'sans-serif';
+
+  function pt(i: number, r: number): [number, number] {
+    const angle = (Math.PI * 2 * i) / N - Math.PI / 2;
+    return [cx + Math.cos(angle) * r, cy + Math.sin(angle) * r];
+  }
+
+  ctx.clearRect(0, 0, size, size);
+
+  // grid rings
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = (R * ring) / 5;
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const [x, y] = pt(i % N, r);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // spokes + axis labels
+  ctx.strokeStyle = border;
+  for (let i = 0; i < N; i++) {
+    const [x, y] = pt(i, R);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+
+    const [lx, ly] = pt(i, R + 32);
+    ctx.fillStyle = text;
+    ctx.font = `600 10px ${fontBody}`;
+    ctx.textAlign = 'center';
+    const lines = labels[i];
+    lines.forEach((line, li) => {
+      ctx.fillText(line, lx, ly + li * 11 - ((lines.length - 1) * 5.5));
+    });
+  }
+
+  // data polygon
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const idx = i % N;
+    const r = (R * values[idx]) / 100;
+    const [x, y] = pt(idx, r);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = accent + '4D';
+  ctx.fill();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // data points + value labels
+  for (let i = 0; i < N; i++) {
+    const r = (R * values[i]) / 100;
+    const [x, y] = pt(i, r);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+
+    ctx.fillStyle = gold;
+    ctx.font = `700 11px ${fontBody}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(values[i].toFixed(0), x, y - 8);
+  }
+
+  // overall index badge
+  ctx.fillStyle = surface2;
+  ctx.strokeStyle = border;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(cx - 46, cy - 16, 92, 32, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = textFaint;
+  ctx.font = `600 8px ${fontBody}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('OVERALL', cx, cy - 3);
+  ctx.fillStyle = gold;
+  ctx.font = `700 15px ${fontBody}`;
+  ctx.fillText(radar.overallIndex.toFixed(1), cx, cy + 11);
+}
+
+function renderSessionSummary() {
+  if (!allGamesComplete()) return;
+
+  const inputMetrics: CompleteAssessmentPayload = {
+    sessionId: appSessionId,
+    game1_bart: savedPayload!.summaryMetrics,
+    game2_wcst: savedGame2Payload!.summaryMetrics,
+    game3_flanker: savedGame3Payload!.summaryMetrics,
+    game4_pgg: savedGame4Payload!.summaryMetrics,
+  };
+  const radar = calculateRadarProfile(inputMetrics);
+
+  const app = document.getElementById('app')!;
+  app.innerHTML = `
+    <div class="screen summary-screen">
+      <div class="summary-inner">
+        <div class="logo-mark">📊</div>
+        <h2 class="gameover-title">Combined Session Results</h2>
+        <p class="gameover-sub">6-axis psychometric profile synthesized across all 4 games.</p>
+
+        <div class="summary-canvas-wrap">
+          <canvas id="radar-canvas"></canvas>
+        </div>
+
+        <div class="metrics-table">
+          <div class="metric-row highlight">
+            <span class="metric-label">Overall Index</span>
+            <span class="metric-value gold">${radar.overallIndex}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Strategic Courage & Risk Acumen</span>
+            <span class="metric-value">${radar.axes.strategicCourage}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Cognitive Adaptability & Shift</span>
+            <span class="metric-value">${radar.axes.cognitiveAdaptability}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Selective Focus & Attentional Control</span>
+            <span class="metric-value">${radar.axes.selectiveFocus}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Impulse & Quality Control</span>
+            <span class="metric-value">${radar.axes.impulseControl}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Team Collaboration & Social Trust</span>
+            <span class="metric-value">${radar.axes.collaborationTrust}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Strategic Resilience & Boundaries</span>
+            <span class="metric-value">${radar.axes.strategicResilience}</span>
+          </div>
+        </div>
+
+        <div class="gameover-actions">
+          <button id="export-summary-btn" class="btn btn-primary">Download Combined JSON</button>
+          <button id="home-summary-btn" class="btn btn-secondary">← Game Select</button>
+        </div>
+        <p class="export-note">Includes all 4 raw payloads (with full trial logs) plus the computed radar profile.</p>
+      </div>
+    </div>
+  `;
+
+  const canvas = qs<HTMLCanvasElement>('#radar-canvas')!;
+  const size = 340;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
+  const ctx = canvas.getContext('2d')!;
+  ctx.scale(dpr, dpr);
+  drawRadarChart(ctx, size, radar);
+
+  qs<HTMLButtonElement>('#export-summary-btn')!.addEventListener('click', () => exportCombinedJSON(radar));
+  qs<HTMLButtonElement>('#home-summary-btn')!.addEventListener('click', renderIntro);
+}
+
+async function exportCombinedJSON(radar: RadarChartOutput) {
+  const btn = qs<HTMLButtonElement>('#export-summary-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Exporting…';
+
+  const reset = (label: string) => {
+    btn.textContent = label;
+    btn.style.opacity = '0.75';
+    setTimeout(() => { btn.textContent = 'Download Combined JSON'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
+  };
+
+  const combined = {
+    sessionId: appSessionId,
+    generatedAt: new Date().toISOString(),
+    game1_bart: savedPayload,
+    game2_wcst: savedGame2Payload,
+    game3_flanker: savedGame3Payload,
+    game4_pgg: savedGame4Payload,
+    radarProfile: radar,
+  };
+
+  try {
+    // @ts-ignore — window.claude injected by Artifact runtime
+    const dl = await window.claude?.use?.('downloads') ?? null;
+    if (!dl) { reset('Download unavailable'); return; }
+    const json = JSON.stringify(combined, null, 2);
+    await dl.save({ filename: `${appSessionId}_combined_radar.json`, data: json });
     reset('Downloaded ✓');
   } catch (err: any) {
     reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
