@@ -840,6 +840,36 @@ body {
   color: var(--accent);
 }
 
+/* On-screen response buttons (mobile-friendly) */
+.flanker-response-row {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.flanker-btn {
+  flex: 1;
+  min-height: 64px;
+  font-size: 28px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: background .15s, border-color .15s, transform .1s;
+}
+
+.flanker-btn:hover:not(:disabled) {
+  background: var(--accent-faint);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.flanker-btn:active:not(:disabled) {
+  transform: scale(.95);
+  background: var(--accent-faint);
+}
+
 /* Keyboard hint */
 .flanker-key-hint {
   font-size: 12px;

@@ -972,7 +972,7 @@ function renderGame3Intro() {
         </div>
         <div class="intro-rules">
           <div class="rule"><span class="rule-num">1</span>Five cards appear — focus on the <strong>center card</strong>.</div>
-          <div class="rule"><span class="rule-num">2</span>Press <kbd>←</kbd> or <kbd>→</kbd> (or <kbd>A</kbd> / <kbd>D</kbd>) to match its arrow.</div>
+          <div class="rule"><span class="rule-num">2</span>Tap the left/right button (or press <kbd>←</kbd> / <kbd>→</kbd>) to match its arrow.</div>
           <div class="rule"><span class="rule-num">3</span>The surrounding notifications may point a different way — ignore them.</div>
         </div>
         <div class="flanker-demo-row">
@@ -1022,11 +1022,17 @@ function renderGame3Trial(trial: FlankerTrial) {
         <div class="flanker-card-row" id="flanker-card-row">
           ${flankerCardRowHTML(trial)}
         </div>
-        <div class="flanker-key-hint">Press <kbd>←</kbd> or <kbd>→</kbd></div>
+        <div class="flanker-key-hint">Tap a side, or press <kbd>←</kbd> / <kbd>→</kbd></div>
         <div class="flanker-feedback" id="flanker-feedback" aria-live="assertive"></div>
+      </div>
+      <div class="flanker-response-row">
+        <button id="flanker-left-btn" class="btn flanker-btn" aria-label="Respond left">←</button>
+        <button id="flanker-right-btn" class="btn flanker-btn" aria-label="Respond right">→</button>
       </div>
     </div>
   `;
+  qs<HTMLButtonElement>('#flanker-left-btn')!.addEventListener('click', () => handleFlankerInput('left'));
+  qs<HTMLButtonElement>('#flanker-right-btn')!.addEventListener('click', () => handleFlankerInput('right'));
 }
 
 // ---- Start a trial (render + set timeout + listen keys) ----
@@ -1039,6 +1045,12 @@ function startGame3Trial(trial: FlankerTrial) {
   }, 1200);
 }
 
+function handleFlankerInput(response: TargetDirection) {
+  if (flankerBusy) return;
+  if (flankerTimeoutHandle !== null) { clearTimeout(flankerTimeoutHandle); flankerTimeoutHandle = null; }
+  submitFlankerResponse(response);
+}
+
 function handleFlankerKey(e: KeyboardEvent) {
   if (flankerBusy) return;
   let response: TargetDirection | null = null;
@@ -1046,8 +1058,7 @@ function handleFlankerKey(e: KeyboardEvent) {
   if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') response = 'right';
   if (!response) return;
   e.preventDefault();
-  if (flankerTimeoutHandle !== null) { clearTimeout(flankerTimeoutHandle); flankerTimeoutHandle = null; }
-  submitFlankerResponse(response);
+  handleFlankerInput(response);
 }
 
 function submitFlankerResponse(response: TargetDirection | 'timeout') {
