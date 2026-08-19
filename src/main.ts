@@ -366,7 +366,8 @@ function renderGameOver() {
         </div>
 
         <div class="gameover-actions">
-          <button id="export-btn" class="btn btn-primary">Export Payload (JSON)</button>
+          <button id="next-game-btn" class="btn btn-primary">Next Game — Poom's Wagashi Sorting →</button>
+          <button id="export-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-btn" class="btn btn-secondary">← Game Select</button>
         </div>
@@ -375,6 +376,7 @@ function renderGameOver() {
     </div>
   `;
 
+  qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame2Intro);
   qs<HTMLButtonElement>('#export-btn')!.addEventListener('click', exportJSON);
   qs<HTMLButtonElement>('#replay-btn')!.addEventListener('click', renderGame1Intro);
   qs<HTMLButtonElement>('#home-btn')!.addEventListener('click', renderIntro);
@@ -904,7 +906,8 @@ function renderGame2GameOver() {
         </div>
 
         <div class="gameover-actions">
-          <button id="export-wcst-btn" class="btn btn-primary">Export Payload (JSON)</button>
+          <button id="next-game-btn" class="btn btn-primary">Next Game — Meen's Focus Mode →</button>
+          <button id="export-wcst-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-wcst-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-wcst-btn" class="btn btn-secondary">← Game Select</button>
         </div>
@@ -913,6 +916,10 @@ function renderGame2GameOver() {
     </div>
   `;
 
+  qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', () => {
+    wcstCorrectCount = 0;
+    renderGame3Intro();
+  });
   qs<HTMLButtonElement>('#export-wcst-btn')!.addEventListener('click', exportGame2JSON);
   qs<HTMLButtonElement>('#replay-wcst-btn')!.addEventListener('click', () => {
     wcstCorrectCount = 0;
@@ -1169,7 +1176,8 @@ function renderGame3GameOver() {
         </div>
 
         <div class="gameover-actions">
-          <button id="export-flanker-btn" class="btn btn-primary">Export Payload (JSON)</button>
+          <button id="next-game-btn" class="btn btn-primary">Next Game — Kong's Neighborhood Sprint →</button>
+          <button id="export-flanker-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-flanker-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-flanker-btn" class="btn btn-secondary">← Game Select</button>
         </div>
@@ -1178,6 +1186,7 @@ function renderGame3GameOver() {
     </div>
   `;
 
+  qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame4Intro);
   qs<HTMLButtonElement>('#export-flanker-btn')!.addEventListener('click', exportGame3JSON);
   qs<HTMLButtonElement>('#replay-flanker-btn')!.addEventListener('click', renderGame3Intro);
   qs<HTMLButtonElement>('#home-flanker-btn')!.addEventListener('click', renderIntro);
