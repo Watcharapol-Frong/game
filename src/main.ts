@@ -1038,11 +1038,17 @@ function renderGame3Trial(trial: FlankerTrial) {
 // ---- Start a trial (render + set timeout + listen keys) ----
 function startGame3Trial(trial: FlankerTrial) {
   renderGame3Trial(trial);
-  flankerBusy = false;
-  document.addEventListener('keydown', handleFlankerKey);
-  flankerTimeoutHandle = setTimeout(() => {
-    submitFlankerResponse('timeout');
-  }, 1200);
+  // Stay busy until the card has actually painted, so a response landing in the gap
+  // between render and paint can't be scored against a stale RT clock.
+  flankerBusy = true;
+  requestAnimationFrame(() => {
+    flankerEngine.showStimulus();
+    flankerBusy = false;
+    document.addEventListener('keydown', handleFlankerKey);
+    flankerTimeoutHandle = setTimeout(() => {
+      submitFlankerResponse('timeout');
+    }, 1200);
+  });
 }
 
 function handleFlankerInput(response: TargetDirection) {

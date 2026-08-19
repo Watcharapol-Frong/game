@@ -7,13 +7,15 @@ import type {
   Game3Payload,
 } from './types';
 
+const MAX_REACTION_TIME_MS = 1500; // hard backstop above the 1200ms UI timeout, in case the caller's timer is delayed
+
 export class MeenFocusEngine {
   private sessionId: string;
   private trialSequence: FlankerTrial[] = [];
   private trialIndex: number = 0;
   private trialsLog: FlankerTrialLog[] = [];
   private startedAt: number = 0;
-  private stimulusStartTime: number = 0;
+  private stimulusTimestamp: number = 0;
   private state: 'IDLE' | 'AWAITING_INPUT' | 'GAME_OVER' = 'IDLE';
 
   constructor(sessionId: string) {
@@ -40,13 +42,18 @@ export class MeenFocusEngine {
   public startGame(): FlankerTrial {
     if (this.trialSequence.length === 0) this.initSequence();
     this.startedAt = Date.now();
-    this.stimulusStartTime = Date.now();
     this.state = 'AWAITING_INPUT';
     return this.trialSequence[0];
   }
 
   public getCurrentTrial(): FlankerTrial {
     return this.trialSequence[this.trialIndex];
+  }
+
+  // Call once the stimulus card has actually finished rendering — this is the RT clock's t=0.
+  // Kept separate from startGame()/handleResponse() so render/paint latency never leaks into RT.
+  public showStimulus(): void {
+    this.stimulusTimestamp = performance.now();
   }
 
   public handleResponse(response: TargetDirection | 'timeout'): {
@@ -57,16 +64,25 @@ export class MeenFocusEngine {
     if (this.state !== 'AWAITING_INPUT') throw new Error('Game is not awaiting input.');
 
     const currentTrial = this.trialSequence[this.trialIndex];
-    const reactionTimeMs = response === 'timeout' ? null : Date.now() - this.stimulusStartTime;
-    const isCorrect = response === currentTrial.targetDirection;
+    let reactionTimeMs = response === 'timeout' ? null : performance.now() - this.stimulusTimestamp;
+
+    // Timeout enforcement: never trust a response that arrived after the RT ceiling —
+    // force it to a timeout regardless of what the caller reported.
+    let effectiveResponse: TargetDirection | 'timeout' = response;
+    if (reactionTimeMs !== null && reactionTimeMs > MAX_REACTION_TIME_MS) {
+      effectiveResponse = 'timeout';
+      reactionTimeMs = null;
+    }
+
+    const isCorrect = effectiveResponse === currentTrial.targetDirection;
     const isImpulsive = reactionTimeMs !== null && reactionTimeMs < 200 && !isCorrect;
-    const isTimeout = response === 'timeout';
+    const isTimeout = effectiveResponse === 'timeout';
 
     this.trialsLog.push({
       trialIndex: this.trialIndex,
       condition: currentTrial.condition,
       targetDirection: currentTrial.targetDirection,
-      response,
+      response: effectiveResponse,
       isCorrect,
       reactionTimeMs,
       isImpulsive,
@@ -79,7 +95,6 @@ export class MeenFocusEngine {
     }
 
     this.trialIndex++;
-    this.stimulusStartTime = Date.now();
     return { isCorrect, isGameOver: false, nextTrial: this.trialSequence[this.trialIndex] };
   }
 
