@@ -1,7 +1,14 @@
 import type { PumpActionLog, BartTrialLog, BartSummaryMetrics, Game1Payload } from './types';
 
-export function generateBurstThreshold(maxCapacity: number = 32): number {
-  return Math.floor(Math.random() * maxCapacity) + 1;
+const EARLY_TRIAL_GUARD_COUNT = 5;
+const EARLY_TRIAL_MIN_THRESHOLD = 6;
+
+export function generateBurstThreshold(maxCapacity: number = 32, trialIndex: number = 0): number {
+  const raw = Math.floor(Math.random() * maxCapacity) + 1;
+  if (trialIndex > 0 && trialIndex <= EARLY_TRIAL_GUARD_COUNT) {
+    return Math.max(raw, EARLY_TRIAL_MIN_THRESHOLD);
+  }
+  return raw;
 }
 
 export function computeSummaryMetrics(trials: BartTrialLog[]): BartSummaryMetrics {
@@ -27,10 +34,16 @@ export function computeSummaryMetrics(trials: BartTrialLog[]): BartSummaryMetric
       ? totalLatencies.reduce((a, b) => a + b, 0) / totalLatencies.length
       : 0;
 
+  // Corrected delta: compare trial after explosion to the last unexploded baseline,
+  // not to the exploded trial itself (which inflates the reference point).
   const adaptationDeltas: number[] = [];
+  let lastUnexplodedPumps: number | null = null;
   for (let i = 0; i < trials.length - 1; i++) {
-    if (trials[i].isExploded) {
-      const delta = trials[i + 1].pumpsCompleted - trials[i].pumpsCompleted;
+    if (!trials[i].isExploded) {
+      lastUnexplodedPumps = trials[i].pumpsCompleted;
+    } else if (lastUnexplodedPumps !== null) {
+      // Pumps[N+1] - Pumps[N-1 (last unexploded)]
+      const delta = trials[i + 1].pumpsCompleted - lastUnexplodedPumps;
       adaptationDeltas.push(delta);
     }
   }
@@ -68,7 +81,7 @@ export class BartGameEngine {
   }
 
   public initializeGame(): void {
-    this.thresholds = Array.from({ length: 20 }, () => generateBurstThreshold(32));
+    this.thresholds = Array.from({ length: 20 }, (_, i) => generateBurstThreshold(32, i + 1));
     this.currentTrialIndex = 1;
     this.trialsLog = [];
     this.totalPoints = 0;
