@@ -321,27 +321,28 @@ function renderGameOver() {
   qs<HTMLButtonElement>('#replay-btn')!.addEventListener('click', renderIntro);
 }
 
-function exportJSON() {
+async function exportJSON() {
   if (!savedPayload) return;
-  const json = JSON.stringify(savedPayload, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${savedPayload.sessionId}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
   const btn = qs<HTMLButtonElement>('#export-btn');
-  if (btn) {
-    btn.textContent = 'Downloaded ✓';
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Exporting…';
+
+  const reset = (label: string) => {
+    btn.textContent = label;
     btn.style.opacity = '0.75';
-    setTimeout(() => {
-      btn.textContent = 'Export Payload (JSON)';
-      btn.style.opacity = '';
-    }, 2000);
+    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
+  };
+
+  try {
+    // @ts-ignore — window.claude is injected by the Artifact runtime
+    const dl = await window.claude?.use?.('downloads') ?? null;
+    if (!dl) { reset('Download unavailable'); return; }
+    const json = JSON.stringify(savedPayload, null, 2);
+    await dl.save({ filename: `${savedPayload.sessionId}.json`, data: json });
+    reset('Downloaded ✓');
+  } catch (err: any) {
+    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
   }
 }
 
