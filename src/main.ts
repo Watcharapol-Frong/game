@@ -5,6 +5,8 @@ import { WcstGameEngine } from './games/game2-wcst/engine';
 import type { Game2Payload, WagashiCard, WagashiShape } from './games/game2-wcst/types';
 import { MeenFocusEngine } from './games/game3-flanker/engine';
 import type { Game3Payload, FlankerTrial, TargetDirection } from './games/game3-flanker/types';
+import { KongNeighborhoodEngine } from './games/game4-pgg/engine';
+import type { Game4Payload, PggRoundLog } from './games/game4-pgg/types';
 
 const MAX_PUMPS = 32;
 const TOTAL_TRIALS = 20;
@@ -28,6 +30,14 @@ let flankerEngine: MeenFocusEngine;
 let flankerBusy = false;
 let flankerTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
 let savedGame3Payload: Game3Payload | null = null;
+
+// ---- Runtime state — Game 4 ----
+let pggEngine: KongNeighborhoodEngine;
+let pggBusy = false;
+let pggCountdownInterval: ReturnType<typeof setInterval> | null = null;
+let pggCountdownTimeout: ReturnType<typeof setTimeout> | null = null;
+let savedGame4Payload: Game4Payload | null = null;
+let pggLastCumulative = 0;
 
 // ---- Helpers ----
 function qs<T extends HTMLElement>(sel: string): T | null {
@@ -65,6 +75,10 @@ function renderIntro() {
             <span style="font-size:22px">🎯</span>
             <span style="text-align:left"><strong>Game 3 — Meen's Focus Mode</strong><br><small style="font-weight:400;opacity:.8">Selective attention · Flanker</small></span>
           </button>
+          <button id="game4-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
+            <span style="font-size:22px">🤝</span>
+            <span style="text-align:left"><strong>Game 4 — Kong's Neighborhood Sprint</strong><br><small style="font-weight:400;opacity:.8">Prosociality · Public Goods Game</small></span>
+          </button>
         </div>
         <p class="session-note">Results export as a JSON payload after each session</p>
       </div>
@@ -73,6 +87,7 @@ function renderIntro() {
   qs<HTMLButtonElement>('#game1-btn')!.addEventListener('click', renderGame1Intro);
   qs<HTMLButtonElement>('#game2-btn')!.addEventListener('click', renderGame2Intro);
   qs<HTMLButtonElement>('#game3-btn')!.addEventListener('click', renderGame3Intro);
+  qs<HTMLButtonElement>('#game4-btn')!.addEventListener('click', renderGame4Intro);
 }
 
 // ============================================================
@@ -1187,6 +1202,279 @@ async function exportGame3JSON() {
     if (!dl) { reset('Download unavailable'); return; }
     const json = JSON.stringify(savedGame3Payload, null, 2);
     await dl.save({ filename: `${savedGame3Payload.sessionId}.json`, data: json });
+    reset('Downloaded ✓');
+  } catch (err: any) {
+    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
+  }
+}
+
+// ============================================================
+// GAME 4 — KONG'S NEIGHBORHOOD SPRINT (Public Goods Game)
+// ============================================================
+
+const PGG_TOTAL_ROUNDS = 8;
+const PGG_ROLE_EMOJI: Record<string, string> = {
+  'Conditional Cooperator': '🤔',
+  'Stable Cooperator': '🌟',
+  'Persistent Free-rider': '😏',
+};
+
+// ---- Game 4 intro screen ----
+function renderGame4Intro() {
+  const app = document.getElementById('app')!;
+  app.innerHTML = `
+    <div class="screen intro-screen">
+      <div class="intro-inner">
+        <div class="logo-mark">🤝</div>
+        <h1 class="game-title">Kong's Neighborhood Sprint</h1>
+        <p class="game-subtitle">A Psychometric Session · Public Goods Game</p>
+        <div class="persona-card">
+          <p>พี่ก้อง (Kong) organizes a shared community fund with 3 neighbors every
+          sprint. Everyone chips in what they choose — the pooled amount grows, then
+          gets split evenly among the whole group.</p>
+          <p><em>How much do you contribute when others might not?</em></p>
+        </div>
+        <div class="intro-rules">
+          <div class="rule"><span class="rule-num">1</span>Each round you and 3 teammates get 10 coins.</div>
+          <div class="rule"><span class="rule-num">2</span>Choose how much to put into the shared pool — the rest you keep.</div>
+          <div class="rule"><span class="rule-num">3</span>The pool is multiplied ×1.6 and split evenly among all 4 players.</div>
+        </div>
+        <button id="begin-pgg-btn" class="btn btn-primary">Begin Session</button>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
+        <p class="session-note">8 rounds &nbsp;·&nbsp; 10 s per round</p>
+      </div>
+    </div>
+  `;
+  qs<HTMLButtonElement>('#begin-pgg-btn')!.addEventListener('click', startGame4);
+  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
+}
+
+// ---- Start game 4 ----
+function startGame4() {
+  pggEngine = new KongNeighborhoodEngine(genSessionId());
+  pggBusy = false;
+  const roundInfo = pggEngine.startRound();
+  renderGame4Round(roundInfo);
+}
+
+// ---- Render a round (contribution selector + countdown) ----
+function renderGame4Round(roundInfo: { roundIndex: number; endowment: number; timeLimitMs: number }) {
+  const app = document.getElementById('app')!;
+
+  app.innerHTML = `
+    <div class="screen pgg-trial-screen">
+      <div class="hud">
+        <div class="hud-trial">
+          <span class="hud-label">Round</span>
+          <span class="hud-value">${roundInfo.roundIndex} <span class="hud-of">of ${PGG_TOTAL_ROUNDS}</span></span>
+        </div>
+        <div class="hud-score">
+          <span class="hud-label">Cumulative Payoff</span>
+          <span class="hud-value score-num" id="pgg-cumulative">${pggLastCumulative}</span>
+        </div>
+      </div>
+
+      <div class="pgg-countdown-track">
+        <div class="pgg-countdown-fill" id="pgg-countdown-fill" style="width:100%"></div>
+      </div>
+
+      <div class="pgg-round-body">
+        <p class="pgg-endowment-note">You have <strong>${roundInfo.endowment} coins</strong> this round. How much goes into the shared pool?</p>
+
+        <div class="pgg-slider-wrap">
+          <div class="pgg-slider-readout">
+            <div class="pgg-readout-block">
+              <span class="pgg-readout-label">Contribute</span>
+              <span class="pgg-readout-val" id="pgg-contrib-val">5</span>
+            </div>
+            <div class="pgg-readout-block right">
+              <span class="pgg-readout-label">Keep</span>
+              <span class="pgg-readout-val gold" id="pgg-keep-val">5</span>
+            </div>
+          </div>
+          <input type="range" min="0" max="10" step="1" value="5" id="pgg-slider" class="pgg-slider" />
+        </div>
+
+        <button id="pgg-confirm-btn" class="btn btn-primary">Confirm Contribution</button>
+      </div>
+    </div>
+  `;
+
+  const slider = qs<HTMLInputElement>('#pgg-slider')!;
+  const contribEl = qs<HTMLElement>('#pgg-contrib-val')!;
+  const keepEl = qs<HTMLElement>('#pgg-keep-val')!;
+  slider.addEventListener('input', () => {
+    const v = Number(slider.value);
+    contribEl.textContent = String(v);
+    keepEl.textContent = String(10 - v);
+  });
+
+  qs<HTMLButtonElement>('#pgg-confirm-btn')!.addEventListener('click', () => {
+    submitPggRound(Number(slider.value), false);
+  });
+
+  // ---- 10s countdown ----
+  const startTs = Date.now();
+  const fillEl = qs<HTMLElement>('#pgg-countdown-fill')!;
+  pggCountdownInterval = setInterval(() => {
+    const elapsed = Date.now() - startTs;
+    const pct = Math.max(0, 100 * (1 - elapsed / 10000));
+    fillEl.style.width = `${pct}%`;
+    fillEl.style.background = pct < 25 ? 'var(--danger)' : pct < 55 ? 'var(--gold)' : 'var(--accent)';
+  }, 100);
+  pggCountdownTimeout = setTimeout(() => {
+    submitPggRound(0, true);
+  }, 10000);
+}
+
+function clearPggCountdown() {
+  if (pggCountdownInterval !== null) { clearInterval(pggCountdownInterval); pggCountdownInterval = null; }
+  if (pggCountdownTimeout !== null) { clearTimeout(pggCountdownTimeout); pggCountdownTimeout = null; }
+}
+
+// ---- Submit a round's contribution ----
+function submitPggRound(contribution: number, isTimeout: boolean) {
+  if (pggBusy) return;
+  pggBusy = true;
+  clearPggCountdown();
+
+  const roundLog = pggEngine.submitContribution(contribution, isTimeout);
+  pggLastCumulative = roundLog.userCumulativePayoff;
+  renderGame4RoundResult(roundLog);
+}
+
+// ---- Round result reveal screen ----
+function renderGame4RoundResult(roundLog: PggRoundLog) {
+  const app = document.getElementById('app')!;
+  const isLastRound = pggEngine.isGameOver();
+
+  const aiCardsHTML = roundLog.aiContributions.map((ai) => `
+    <div class="pgg-ai-card">
+      <span class="pgg-ai-emoji">${PGG_ROLE_EMOJI[ai.role] ?? '🙂'}</span>
+      <span class="pgg-ai-name">${ai.name}</span>
+      <span class="pgg-ai-role">${ai.role}</span>
+      <span class="pgg-ai-coins">${ai.contribution} <small>coins</small></span>
+    </div>
+  `).join('');
+
+  app.innerHTML = `
+    <div class="screen pgg-result-screen">
+      <div class="pgg-result-inner">
+        <p class="pgg-result-label">Round ${roundLog.roundIndex} Results ${roundLog.isTimeout ? '<span class="danger">(Timed out)</span>' : ''}</p>
+
+        <div class="pgg-ai-panel">
+          <div class="pgg-ai-card pgg-ai-card-user">
+            <span class="pgg-ai-emoji">🧑</span>
+            <span class="pgg-ai-name">You</span>
+            <span class="pgg-ai-role">Contributed</span>
+            <span class="pgg-ai-coins">${roundLog.userContribution} <small>coins</small></span>
+          </div>
+          ${aiCardsHTML}
+        </div>
+
+        <div class="pgg-pool-math">
+          <div class="pgg-pool-row"><span>Total Pool</span><span>${roundLog.totalPool} coins</span></div>
+          <div class="pgg-pool-row"><span>× 1.6 Multiplier</span><span>${roundLog.multipliedPool}</span></div>
+          <div class="pgg-pool-row"><span>÷ 4 Players (your share)</span><span>${roundLog.individualShare}</span></div>
+          <div class="pgg-pool-row highlight"><span>This Round's Payoff</span><span>${roundLog.userRoundPayoff} pts</span></div>
+          <div class="pgg-pool-row highlight gold"><span>Cumulative Payoff</span><span>${roundLog.userCumulativePayoff} pts</span></div>
+        </div>
+
+        <button id="pgg-continue-btn" class="btn btn-primary">${isLastRound ? 'View Final Results' : 'Continue →'}</button>
+      </div>
+    </div>
+  `;
+
+  qs<HTMLButtonElement>('#pgg-continue-btn')!.addEventListener('click', () => {
+    pggBusy = false;
+    if (isLastRound) {
+      renderGame4GameOver();
+    } else {
+      const roundInfo = pggEngine.startRound();
+      renderGame4Round(roundInfo);
+    }
+  });
+}
+
+// ---- Game 4 game-over screen ----
+function renderGame4GameOver() {
+  savedGame4Payload = pggEngine.getPayload();
+  const m = savedGame4Payload.summaryMetrics;
+  const slopeStr = m.cooperationDecaySlope >= 0 ? `+${m.cooperationDecaySlope}` : String(m.cooperationDecaySlope);
+  const sensStr = m.freeRiderSensitivity >= 0 ? `+${m.freeRiderSensitivity}` : String(m.freeRiderSensitivity);
+
+  const app = document.getElementById('app')!;
+  app.innerHTML = `
+    <div class="screen wcst-gameover-screen">
+      <div class="wcst-gameover-inner">
+        <div class="logo-mark">🤝</div>
+        <h2 class="gameover-title">Session Complete</h2>
+        <p class="gameover-sub">Here's how Kong contributed to the neighborhood fund.</p>
+
+        <div class="metrics-table">
+          <div class="metric-row highlight">
+            <span class="metric-label">Final Cumulative Payoff</span>
+            <span class="metric-value gold">${m.finalCumulativePayoff} pts</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Initial Contribution <em>(baseline trust)</em></span>
+            <span class="metric-value">${m.initialContribution} / 10</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Average Contribution</span>
+            <span class="metric-value">${m.averageContribution} / 10</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Cooperation Decay Slope</span>
+            <span class="metric-value">${slopeStr}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Free-rider Sensitivity</span>
+            <span class="metric-value">${sensStr}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Avg Decision Time</span>
+            <span class="metric-value">${m.meanDecisionLatencyMs} ms</span>
+          </div>
+        </div>
+
+        <div class="gameover-actions">
+          <button id="export-pgg-btn" class="btn btn-primary">Export Payload (JSON)</button>
+          <button id="replay-pgg-btn" class="btn btn-secondary">Play Again</button>
+          <button id="home-pgg-btn" class="btn btn-secondary">← Game Select</button>
+        </div>
+        <p class="export-note">JSON payload conforms to Game4Payload (PGG) schema.</p>
+      </div>
+    </div>
+  `;
+
+  qs<HTMLButtonElement>('#export-pgg-btn')!.addEventListener('click', exportGame4JSON);
+  qs<HTMLButtonElement>('#replay-pgg-btn')!.addEventListener('click', () => {
+    pggLastCumulative = 0;
+    renderGame4Intro();
+  });
+  qs<HTMLButtonElement>('#home-pgg-btn')!.addEventListener('click', renderIntro);
+}
+
+async function exportGame4JSON() {
+  if (!savedGame4Payload) return;
+  const btn = qs<HTMLButtonElement>('#export-pgg-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Exporting…';
+
+  const reset = (label: string) => {
+    btn.textContent = label;
+    btn.style.opacity = '0.75';
+    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
+  };
+
+  try {
+    // @ts-ignore — window.claude injected by Artifact runtime
+    const dl = await window.claude?.use?.('downloads') ?? null;
+    if (!dl) { reset('Download unavailable'); return; }
+    const json = JSON.stringify(savedGame4Payload, null, 2);
+    await dl.save({ filename: `${savedGame4Payload.sessionId}.json`, data: json });
     reset('Downloaded ✓');
   } catch (err: any) {
     reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');

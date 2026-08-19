@@ -928,3 +928,242 @@ body {
   .flanker-trial-screen.glow-correct,
   .flanker-trial-screen.shake-wrong { animation: none; }
 }
+
+/* ================================================================
+   Game 4 — Kong's Neighborhood Sprint (Public Goods Game)
+   ================================================================ */
+
+.pgg-trial-screen {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* 10s countdown bar */
+.pgg-countdown-track {
+  height: 5px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.pgg-countdown-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.1s linear, background 0.3s ease;
+}
+
+.pgg-round-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 26px 24px 24px;
+}
+
+.pgg-endowment-note {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pgg-endowment-note strong {
+  color: var(--text);
+}
+
+/* Contribution slider */
+.pgg-slider-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pgg-slider-readout {
+  display: flex;
+  justify-content: space-between;
+}
+
+.pgg-readout-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pgg-readout-block.right {
+  align-items: flex-end;
+}
+
+.pgg-readout-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pgg-readout-val {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.pgg-readout-val.gold {
+  color: var(--gold);
+}
+
+.pgg-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  outline: none;
+}
+
+.pgg-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.pgg-slider::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+/* ---- Round result reveal ---- */
+.pgg-result-screen {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.pgg-result-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 26px 24px;
+}
+
+.pgg-result-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pgg-result-label .danger {
+  color: var(--danger);
+}
+
+.pgg-ai-panel {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.pgg-ai-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 12px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.pgg-ai-card-user {
+  background: var(--accent-faint);
+  border-color: var(--accent);
+}
+
+.pgg-ai-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.pgg-ai-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pgg-ai-role {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.pgg-ai-coins {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  margin-top: 2px;
+}
+
+.pgg-ai-coins small {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.pgg-pool-math {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.pgg-pool-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.pgg-pool-row:last-child {
+  border-bottom: none;
+}
+
+.pgg-pool-row.highlight {
+  background: var(--accent-faint);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pgg-pool-row.gold {
+  background: var(--gold-faint);
+  color: var(--gold);
+}

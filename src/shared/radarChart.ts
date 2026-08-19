@@ -32,7 +32,16 @@ export interface Game3Metrics {
   incongruentAccuracy: number;  // 0.0–1.0 — sustained attention proxy
 }
 
-export function computeRadarScore(game1: Game1Metrics, game2?: Game2Metrics, game3?: Game3Metrics): RadarScore {
+export interface Game4Metrics {
+  averageContribution: number; // 0–10, g-bar
+}
+
+export function computeRadarScore(
+  game1: Game1Metrics,
+  game2?: Game2Metrics,
+  game3?: Game3Metrics,
+  game4?: Game4Metrics,
+): RadarScore {
   const maxPumps = 32;
   const riskTaking = clamp100((game1.adjustedAveragePumps / maxPumps) * 100);
   const impulseControl = clamp100(
@@ -54,11 +63,16 @@ export function computeRadarScore(game1: Game1Metrics, game2?: Game2Metrics, gam
     ? clamp100(game3.incongruentAccuracy * 100)
     : 0;
 
+  // prosociality: average PGG contribution maps directly to 0–100
+  const prosociality = game4
+    ? clamp100((game4.averageContribution / 10) * 100)
+    : 0;
+
   return {
     riskTaking,
     impulseControl,
     cognitiveFlexibility,
-    prosociality: 0,
+    prosociality,
     processingSpeed,
     sustainedAttention,
   };
