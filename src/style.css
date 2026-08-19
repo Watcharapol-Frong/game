@@ -594,3 +594,171 @@ body {
   color: var(--text-faint);
   text-align: center;
 }
+
+/* ================================================================
+   Game 2 — Wagashi Sorting (WCST)
+   ================================================================ */
+
+/* Game selector on the shared intro screen */
+.game-select-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* ---- Trial screen layout ---- */
+.wcst-trial-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.wcst-target-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.wcst-presented-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px 10px;
+}
+
+.wcst-presented-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.wcst-feedback-row {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 20px 16px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  transition: color .15s;
+}
+.wcst-feedback-row.correct   { color: var(--accent); }
+.wcst-feedback-row.incorrect { color: var(--danger); }
+
+/* ---- Wagashi card ---- */
+.wagashi-card {
+  position: relative;
+  width: 100px;
+  min-height: 116px;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 8px;
+  cursor: default;
+  transition: border-color .15s, box-shadow .15s, transform .1s;
+  box-shadow: var(--shadow-sm);
+}
+
+.wagashi-card.target-plate {
+  cursor: pointer;
+  width: 88px;
+  min-height: 100px;
+  padding: 8px 6px;
+}
+
+.wagashi-card.target-plate:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.wagashi-card.target-plate:active {
+  transform: scale(.96);
+}
+
+.wagashi-card.target-plate:disabled,
+.wagashi-card[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: .55;
+}
+
+/* Color variants */
+.wagashi-card.color-green  { background: #E8F5EE; border-color: #52B788; }
+.wagashi-card.color-pink   { background: #FDE8EF; border-color: #E88FA8; }
+.wagashi-card.color-yellow { background: #FDF6E3; border-color: #C9A227; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) .wagashi-card.color-green  { background: #1A3D2B; border-color: #52B788; }
+  :root:not([data-theme=light]) .wagashi-card.color-pink   { background: #3A1A26; border-color: #E88FA8; }
+  :root:not([data-theme=light]) .wagashi-card.color-yellow { background: #2E2510; border-color: #C9A227; }
+}
+:root[data-theme=dark] .wagashi-card.color-green  { background: #1A3D2B; border-color: #52B788; }
+:root[data-theme=dark] .wagashi-card.color-pink   { background: #3A1A26; border-color: #E88FA8; }
+:root[data-theme=dark] .wagashi-card.color-yellow { background: #2E2510; border-color: #C9A227; }
+
+.wagashi-card.presented {
+  width: 120px;
+  min-height: 136px;
+  border-width: 2.5px;
+  cursor: default;
+  box-shadow: var(--shadow-md);
+}
+
+.card-symbols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  line-height: 1;
+}
+
+.card-symbol {
+  font-size: 22px;
+}
+
+.wagashi-card.target-plate .card-symbol {
+  font-size: 18px;
+}
+
+.plate-index {
+  position: absolute;
+  top: 5px;
+  left: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-faint);
+  letter-spacing: .04em;
+}
+
+/* ---- WCST Game-over metrics ---- */
+.wcst-gameover-screen {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.wcst-gameover-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 36px 28px;
+}

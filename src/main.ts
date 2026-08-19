@@ -1,18 +1,25 @@
 import './style.css';
 import { BartGameEngine } from './games/game1-bart/engine';
 import type { Game1Payload } from './games/game1-bart/types';
+import { WcstGameEngine } from './games/game2-wcst/engine';
+import type { Game2Payload, WagashiCard, WagashiColor, WagashiShape } from './games/game2-wcst/types';
 
 const MAX_PUMPS = 32;
 const TOTAL_TRIALS = 20;
 const CANVAS_W = 300;
 const CANVAS_H = 380;
 
-// ---- Runtime state ----
+// ---- Runtime state — Game 1 ----
 let engine: BartGameEngine;
 let currentPumps = 0;
 let isBusy = false;
 let savedPayload: Game1Payload | null = null;
 let canvasCtx: CanvasRenderingContext2D | null = null;
+
+// ---- Runtime state — Game 2 ----
+let wcstEngine: WcstGameEngine;
+let wcstBusy = false;
+let savedGame2Payload: Game2Payload | null = null;
 
 // ---- Helpers ----
 function qs<T extends HTMLElement>(sel: string): T | null {
@@ -27,41 +34,63 @@ function genSessionId(): string {
 renderIntro();
 
 // ============================================================
-// INTRO SCREEN
+// GAME SELECTOR
 // ============================================================
 function renderIntro() {
   const app = document.getElementById('app')!;
   app.innerHTML = `
     <div class="screen intro-screen">
       <div class="intro-inner">
+        <div class="logo-mark">🧠</div>
+        <h1 class="game-title">Psychometric Session</h1>
+        <p class="game-subtitle">Select a game to begin</p>
+        <div class="game-select-row">
+          <button id="game1-btn" class="btn btn-primary" style="display:flex;align-items:center;gap:10px;justify-content:center">
+            <span style="font-size:22px">🌵</span>
+            <span style="text-align:left"><strong>Game 1 — Jane's Cactus Care</strong><br><small style="font-weight:400;opacity:.8">Risk tolerance · BART</small></span>
+          </button>
+          <button id="game2-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
+            <span style="font-size:22px">🍡</span>
+            <span style="text-align:left"><strong>Game 2 — Poom's Wagashi Sorting</strong><br><small style="font-weight:400;opacity:.8">Cognitive flexibility · WCST</small></span>
+          </button>
+        </div>
+        <p class="session-note">Results export as a JSON payload after each session</p>
+      </div>
+    </div>
+  `;
+  qs<HTMLButtonElement>('#game1-btn')!.addEventListener('click', renderGame1Intro);
+  qs<HTMLButtonElement>('#game2-btn')!.addEventListener('click', renderGame2Intro);
+}
+
+// ============================================================
+// GAME 1 — INTRO
+// ============================================================
+function renderGame1Intro() {
+  const app = document.getElementById('app')!;
+  app.innerHTML = `
+    <div class="screen intro-screen">
+      <div class="intro-inner">
         <div class="logo-mark">🌵</div>
         <h1 class="game-title">Jane's Cactus Care</h1>
-        <p class="game-subtitle">A Psychometric Session</p>
+        <p class="game-subtitle">A Psychometric Session · BART</p>
         <div class="persona-card">
           <p>Jane traded her corporate spreadsheets for cactus soil. Now she runs a small plant
           shop, making gut-feel decisions every day: water more or hold back?</p>
           <p><em>How far do you push before you pull back?</em></p>
         </div>
         <div class="intro-rules">
-          <div class="rule">
-            <span class="rule-num">1</span>
-            Pump to grow your cactus and earn points.
-          </div>
-          <div class="rule">
-            <span class="rule-num">2</span>
-            Bank at any time to lock in what you've earned.
-          </div>
-          <div class="rule">
-            <span class="rule-num">3</span>
-            Over-pump and the cactus bursts — those points are gone.
-          </div>
+          <div class="rule"><span class="rule-num">1</span>Pump to grow your cactus and earn points.</div>
+          <div class="rule"><span class="rule-num">2</span>Bank at any time to lock in what you've earned.</div>
+          <div class="rule"><span class="rule-num">3</span>Over-pump and the cactus bursts — those points are gone.</div>
         </div>
         <button id="begin-btn" class="btn btn-primary">Begin Session</button>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
         <p class="session-note">20 cacti &nbsp;·&nbsp; no time limit</p>
       </div>
     </div>
   `;
   qs<HTMLButtonElement>('#begin-btn')!.addEventListener('click', startGame);
+  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
 }
 
 // ============================================================
@@ -311,6 +340,7 @@ function renderGameOver() {
         <div class="gameover-actions">
           <button id="export-btn" class="btn btn-primary">Export Payload (JSON)</button>
           <button id="replay-btn" class="btn btn-secondary">Play Again</button>
+          <button id="home-btn" class="btn btn-secondary">← Game Select</button>
         </div>
         <p class="export-note">JSON payload conforms to Game1Payload (BART) schema.</p>
       </div>
@@ -318,7 +348,8 @@ function renderGameOver() {
   `;
 
   qs<HTMLButtonElement>('#export-btn')!.addEventListener('click', exportJSON);
-  qs<HTMLButtonElement>('#replay-btn')!.addEventListener('click', renderIntro);
+  qs<HTMLButtonElement>('#replay-btn')!.addEventListener('click', renderGame1Intro);
+  qs<HTMLButtonElement>('#home-btn')!.addEventListener('click', renderIntro);
 }
 
 async function exportJSON() {
@@ -640,4 +671,249 @@ function drawBurst(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
   ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(cx - 16, cy - 16); ctx.lineTo(cx + 16, cy + 16); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(cx + 16, cy - 16); ctx.lineTo(cx - 16, cy + 16); ctx.stroke();
+}
+
+// ============================================================
+// GAME 2 — WCST (Poom's Wagashi Sorting)
+// ============================================================
+
+const WCST_TOTAL = 40;
+
+const SHAPE_EMOJI: Record<WagashiShape, string> = {
+  flower: '🌸',
+  leaf:   '🍃',
+  round:  '🟡',
+};
+
+function wagashiCardHTML(card: WagashiCard, extraClass = '', index?: number): string {
+  const symbols = Array.from({ length: card.count }, () => `<span class="card-symbol">${SHAPE_EMOJI[card.shape]}</span>`).join('');
+  const indexPin = index !== undefined ? `<span class="plate-index">${index + 1}</span>` : '';
+  return `<div class="wagashi-card color-${card.color} ${extraClass}" role="button" tabindex="0" aria-label="Plate ${index !== undefined ? index + 1 : ''}">${indexPin}<div class="card-symbols">${symbols}</div></div>`;
+}
+
+// ---- Game 2 intro screen ----
+function renderGame2Intro() {
+  const app = document.getElementById('app')!;
+  const eng = new WcstGameEngine('_preview');
+  const plates = eng.targetPlates;
+  const platesHTML = plates.map((p, i) => wagashiCardHTML(p, 'target-plate', i)).join('');
+
+  app.innerHTML = `
+    <div class="screen intro-screen">
+      <div class="intro-inner">
+        <div class="logo-mark">🍡</div>
+        <h1 class="game-title">Poom's Wagashi Sorting</h1>
+        <p class="game-subtitle">A Psychometric Session · WCST</p>
+        <div class="persona-card">
+          <p>ภูมิ (Poom) left his office job to become a matcha barista. Every day he arranges
+          wagashi sweets on paper trays — but the customer's sorting rule changes without warning.</p>
+          <p><em>Can you adapt when the rules shift under you?</em></p>
+        </div>
+        <div class="intro-rules">
+          <div class="rule"><span class="rule-num">1</span>A wagashi card appears. Sort it onto one of the 3 reference trays.</div>
+          <div class="rule"><span class="rule-num">2</span>You'll be told Correct or Incorrect — but never why.</div>
+          <div class="rule"><span class="rule-num">3</span>After 6 correct in a row the sorting rule changes silently.</div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;padding:4px 0">
+          ${platesHTML}
+        </div>
+        <button id="begin-wcst-btn" class="btn btn-primary">Begin Session</button>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
+        <p class="session-note">40 cards &nbsp;·&nbsp; no time limit</p>
+      </div>
+    </div>
+  `;
+  qs<HTMLButtonElement>('#begin-wcst-btn')!.addEventListener('click', startGame2);
+  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
+}
+
+// ---- Start game 2 ----
+function startGame2() {
+  wcstEngine = new WcstGameEngine(genSessionId());
+  const firstCard = wcstEngine.initializeGame();
+  wcstBusy = false;
+  renderGame2Trial(firstCard);
+}
+
+// ---- Game 2 trial screen ----
+function renderGame2Trial(card: WagashiCard) {
+  const app = document.getElementById('app')!;
+  const plates = wcstEngine.targetPlates;
+  const trialIdx = wcstEngine.getCurrentTrialIndex();
+
+  const platesHTML = plates
+    .map((p, i) => wagashiCardHTML(p, 'target-plate', i))
+    .join('');
+
+  app.innerHTML = `
+    <div class="screen wcst-trial-screen">
+      <div class="hud">
+        <div class="hud-trial">
+          <span class="hud-label">Card</span>
+          <span class="hud-value" id="wcst-trial-num">${trialIdx} <span class="hud-of">of ${WCST_TOTAL}</span></span>
+        </div>
+        <div class="hud-score">
+          <span class="hud-label">Correct</span>
+          <span class="hud-value score-num" id="wcst-correct">0</span>
+        </div>
+      </div>
+
+      <div class="wcst-target-row" id="target-row">
+        ${platesHTML}
+      </div>
+
+      <div class="wcst-presented-wrap">
+        <span class="wcst-presented-label">Sort this wagashi</span>
+        <div id="presented-card">${wagashiCardHTML(card, 'presented')}</div>
+        <div class="wcst-feedback-row" id="wcst-feedback" aria-live="assertive"></div>
+      </div>
+    </div>
+  `;
+
+  // Attach click handlers to target plates
+  document.querySelectorAll<HTMLElement>('#target-row .target-plate').forEach((el, i) => {
+    el.addEventListener('click', () => handleGame2Choice(i));
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') handleGame2Choice(i); });
+  });
+}
+
+let wcstCorrectCount = 0;
+
+function handleGame2Choice(targetIndex: number) {
+  if (wcstBusy) return;
+  wcstBusy = true;
+  setGame2PlatesDisabled(true);
+
+  const result = wcstEngine.submitChoice(targetIndex);
+  if (result.isCorrect) wcstCorrectCount++;
+
+  // Update correct count in HUD
+  const correctEl = qs<HTMLElement>('#wcst-correct');
+  if (correctEl) correctEl.textContent = String(wcstCorrectCount);
+
+  // Show feedback
+  const fb = qs<HTMLElement>('#wcst-feedback');
+  if (fb) {
+    fb.textContent = result.isCorrect ? '✓ Correct' : '✗ Incorrect';
+    fb.className = `wcst-feedback-row ${result.isCorrect ? 'correct' : 'incorrect'}`;
+  }
+
+  setTimeout(() => {
+    if (result.isGameOver) {
+      renderGame2GameOver();
+    } else {
+      // Update presented card and trial counter
+      const presentedEl = qs<HTMLElement>('#presented-card');
+      if (presentedEl && result.nextCard) {
+        presentedEl.innerHTML = wagashiCardHTML(result.nextCard, 'presented');
+      }
+      const trialEl = qs<HTMLElement>('#wcst-trial-num');
+      if (trialEl) {
+        trialEl.innerHTML = `${wcstEngine.getCurrentTrialIndex()} <span class="hud-of">of ${WCST_TOTAL}</span>`;
+      }
+      if (fb) { fb.textContent = ''; fb.className = 'wcst-feedback-row'; }
+      setGame2PlatesDisabled(false);
+      wcstBusy = false;
+    }
+  }, 700);
+}
+
+function setGame2PlatesDisabled(disabled: boolean) {
+  document.querySelectorAll<HTMLElement>('#target-row .target-plate').forEach((el) => {
+    el.setAttribute('aria-disabled', String(disabled));
+    (el as any).style.pointerEvents = disabled ? 'none' : '';
+    (el as any).style.opacity = disabled ? '0.55' : '';
+  });
+}
+
+// ---- Game 2 game-over screen ----
+function renderGame2GameOver() {
+  savedGame2Payload = wcstEngine.getPayload();
+  const m = savedGame2Payload.summaryMetrics;
+  const peRate = m.totalErrors > 0 ? `${(m.perseverativeErrorRate * 100).toFixed(0)}%` : 'N/A';
+
+  const app = document.getElementById('app')!;
+  app.innerHTML = `
+    <div class="screen wcst-gameover-screen">
+      <div class="wcst-gameover-inner">
+        <div class="logo-mark">🍡</div>
+        <h2 class="gameover-title">Session Complete</h2>
+        <p class="gameover-sub">Here's how Poom sorted his 40 wagashi.</p>
+
+        <div class="metrics-table">
+          <div class="metric-row highlight">
+            <span class="metric-label">Categories Completed</span>
+            <span class="metric-value gold">${m.categoriesCompleted} / 6</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Total Correct</span>
+            <span class="metric-value">${m.totalCorrect} / ${m.totalTrials}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Total Errors</span>
+            <span class="metric-value danger">${m.totalErrors}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Perseverative Errors <em>(rigidity)</em></span>
+            <span class="metric-value danger">${m.perseverativeErrors} &nbsp;<small style="font-weight:400;color:var(--text-faint)">${peRate}</small></span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Non-Perseverative Errors</span>
+            <span class="metric-value">${m.nonPerseverativeErrors}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Trials to First Category</span>
+            <span class="metric-value">${m.trialsToFirstCategory}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Failure to Maintain Set</span>
+            <span class="metric-value">${m.failureToMaintainSet}</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Avg Decision Time</span>
+            <span class="metric-value">${m.averageReactionTimeMs} ms</span>
+          </div>
+        </div>
+
+        <div class="gameover-actions">
+          <button id="export-wcst-btn" class="btn btn-primary">Export Payload (JSON)</button>
+          <button id="replay-wcst-btn" class="btn btn-secondary">Play Again</button>
+          <button id="home-wcst-btn" class="btn btn-secondary">← Game Select</button>
+        </div>
+        <p class="export-note">JSON payload conforms to Game2Payload (WCST) schema.</p>
+      </div>
+    </div>
+  `;
+
+  qs<HTMLButtonElement>('#export-wcst-btn')!.addEventListener('click', exportGame2JSON);
+  qs<HTMLButtonElement>('#replay-wcst-btn')!.addEventListener('click', () => {
+    wcstCorrectCount = 0;
+    renderGame2Intro();
+  });
+  qs<HTMLButtonElement>('#home-wcst-btn')!.addEventListener('click', renderIntro);
+}
+
+async function exportGame2JSON() {
+  if (!savedGame2Payload) return;
+  const btn = qs<HTMLButtonElement>('#export-wcst-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Exporting…';
+
+  const reset = (label: string) => {
+    btn.textContent = label;
+    btn.style.opacity = '0.75';
+    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
+  };
+
+  try {
+    // @ts-ignore — window.claude injected by Artifact runtime
+    const dl = await window.claude?.use?.('downloads') ?? null;
+    if (!dl) { reset('Download unavailable'); return; }
+    const json = JSON.stringify(savedGame2Payload, null, 2);
+    await dl.save({ filename: `${savedGame2Payload.sessionId}.json`, data: json });
+    reset('Downloaded ✓');
+  } catch (err: any) {
+    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
+  }
 }

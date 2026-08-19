@@ -22,21 +22,29 @@ export interface Game1Metrics {
   totalTrials: number;
 }
 
-export function computeRadarScore(game1: Game1Metrics): RadarScore {
+export interface Game2Metrics {
+  categoriesCompleted: number;    // 0–6
+  perseverativeErrorRate: number; // 0.0–1.0
+}
+
+export function computeRadarScore(game1: Game1Metrics, game2?: Game2Metrics): RadarScore {
   const maxPumps = 32;
-  // Risk-taking: linear scale, 32 pumps = 100
   const riskTaking = clamp100((game1.adjustedAveragePumps / maxPumps) * 100);
-  // Impulse control: inverse of explode rate
   const impulseControl = clamp100(
     (1 - game1.explodedTrialsCount / game1.totalTrials) * 100,
   );
 
+  // cognitiveFlexibility: how many categories cleared, penalised by perseverative error rate
+  const cognitiveFlexibility = game2
+    ? clamp100((game2.categoriesCompleted / 6) * 100 * (1 - game2.perseverativeErrorRate))
+    : 0;
+
   return {
     riskTaking,
     impulseControl,
-    cognitiveFlexibility: 0, // populated when game2 is implemented
-    prosociality: 0,          // populated when game4 is implemented
-    processingSpeed: 0,       // populated when game3 is implemented
-    sustainedAttention: 0,    // populated when game3 is implemented
+    cognitiveFlexibility,
+    prosociality: 0,       // populated when game4 is implemented
+    processingSpeed: 0,    // populated when game3 is implemented
+    sustainedAttention: 0, // populated when game3 is implemented
   };
 }
