@@ -1,6 +1,6 @@
 import './style.css';
-import { BartGameEngine } from './engine';
-import type { Game1Payload } from './types';
+import { BartGameEngine } from './games/game1-bart/engine';
+import type { Game1Payload } from './games/game1-bart/types';
 
 const MAX_PUMPS = 32;
 const TOTAL_TRIALS = 20;
