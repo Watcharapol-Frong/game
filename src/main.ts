@@ -1529,20 +1529,20 @@ function cssVar(name: string): string {
 
 function drawRadarChart(ctx: CanvasRenderingContext2D, size: number, radar: RadarChartOutput) {
   const labels: string[][] = [
-    ['Strategic Courage', '& Risk Acumen'],
-    ['Cognitive', 'Adaptability', '& Shift'],
-    ['Selective Focus', '& Attentional', 'Control'],
-    ['Impulse &', 'Quality Control'],
-    ['Team', 'Collaboration', '& Social Trust'],
-    ['Strategic', 'Resilience', '& Boundaries'],
+    ['Risk', 'Tolerance'],
+    ['Learning', 'Agility'],
+    ['Critical', 'Thinking'],
+    ['Decision Making', 'Under Pressure'],
+    ['Collaboration', 'Mindset'],
+    ['Resilience &', 'Adaptability'],
   ];
   const values = [
-    radar.axes.strategicCourage,
-    radar.axes.cognitiveAdaptability,
-    radar.axes.selectiveFocus,
-    radar.axes.impulseControl,
-    radar.axes.collaborationTrust,
-    radar.axes.strategicResilience,
+    radar.axes.riskTolerance,
+    radar.axes.learningAgility,
+    radar.axes.criticalThinking,
+    radar.axes.decisionMakingUnderPressure,
+    radar.axes.collaborationMindset,
+    radar.axes.resilienceAndAdaptability,
   ];
   const N = 6;
   const cx = size / 2;
@@ -1674,28 +1674,28 @@ function renderSessionSummary() {
             <span class="metric-value gold">${radar.overallIndex}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Strategic Courage & Risk Acumen</span>
-            <span class="metric-value">${radar.axes.strategicCourage}</span>
+            <span class="metric-label">Risk Tolerance</span>
+            <span class="metric-value">${radar.axes.riskTolerance}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Cognitive Adaptability & Shift</span>
-            <span class="metric-value">${radar.axes.cognitiveAdaptability}</span>
+            <span class="metric-label">Learning Agility</span>
+            <span class="metric-value">${radar.axes.learningAgility}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Selective Focus & Attentional Control</span>
-            <span class="metric-value">${radar.axes.selectiveFocus}</span>
+            <span class="metric-label">Critical Thinking</span>
+            <span class="metric-value">${radar.axes.criticalThinking}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Impulse & Quality Control</span>
-            <span class="metric-value">${radar.axes.impulseControl}</span>
+            <span class="metric-label">Decision Making Under Pressure</span>
+            <span class="metric-value">${radar.axes.decisionMakingUnderPressure}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Team Collaboration & Social Trust</span>
-            <span class="metric-value">${radar.axes.collaborationTrust}</span>
+            <span class="metric-label">Collaboration Mindset</span>
+            <span class="metric-value">${radar.axes.collaborationMindset}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Strategic Resilience & Boundaries</span>
-            <span class="metric-value">${radar.axes.strategicResilience}</span>
+            <span class="metric-label">Resilience & Adaptability</span>
+            <span class="metric-value">${radar.axes.resilienceAndAdaptability}</span>
           </div>
         </div>
 

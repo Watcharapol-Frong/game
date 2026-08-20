@@ -85,13 +85,13 @@ describe('calculateRadarProfile', () => {
     const result = calculateRadarProfile(mockPayload({ sessionId: 'sess_ktp_integrated_test' }));
 
     expect(result.sessionId).toBe('sess_ktp_integrated_test');
-    expect(result.axes.strategicCourage).toBeCloseTo(86.59, 1);
-    expect(result.axes.cognitiveAdaptability).toBeCloseTo(89.24, 1);
-    expect(result.axes.selectiveFocus).toBeCloseTo(80.67, 1);
-    expect(result.axes.impulseControl).toBeCloseTo(93.54, 1);
-    expect(result.axes.collaborationTrust).toBeCloseTo(70.09, 1);
-    expect(result.axes.strategicResilience).toBeCloseTo(58.07, 1);
-    expect(result.overallIndex).toBeCloseTo(79.7, 1);
+    expect(result.axes.riskTolerance).toBeCloseTo(86.59, 1);
+    expect(result.axes.learningAgility).toBeCloseTo(89.24, 1);
+    expect(result.axes.criticalThinking).toBeCloseTo(80.67, 1);
+    expect(result.axes.decisionMakingUnderPressure).toBeCloseTo(93.54, 1);
+    expect(result.axes.collaborationMindset).toBeCloseTo(70.09, 1);
+    expect(result.axes.resilienceAndAdaptability).toBeCloseTo(67.03, 1);
+    expect(result.overallIndex).toBeCloseTo(81.19, 1);
   });
 
   it('floors every axis to 0 when every underlying metric is worst-case', () => {
@@ -151,7 +151,7 @@ describe('calculateRadarProfile', () => {
       game4_pgg: mockPgg({
         initialContribution: 10,
         averageContribution: 9,
-        freeRiderSensitivity: 2.5,      // /10 = 0.25 exact target
+        freeRiderSensitivity: 0.5,      // exact target
         cooperationDecaySlope: -0.15,   // exact target
       }),
     });
@@ -168,12 +168,12 @@ describe('calculateRadarProfile', () => {
     const result = calculateRadarProfile(mockPayload());
     const mean = Number(
       (
-        (result.axes.strategicCourage +
-          result.axes.cognitiveAdaptability +
-          result.axes.selectiveFocus +
-          result.axes.impulseControl +
-          result.axes.collaborationTrust +
-          result.axes.strategicResilience) /
+        (result.axes.riskTolerance +
+          result.axes.learningAgility +
+          result.axes.criticalThinking +
+          result.axes.decisionMakingUnderPressure +
+          result.axes.collaborationMindset +
+          result.axes.resilienceAndAdaptability) /
         6
       ).toFixed(2),
     );

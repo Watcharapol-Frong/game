@@ -27,12 +27,12 @@ export interface RadarChartOutput {
   sessionId: string;
   generatedAt: string;
   axes: {
-    strategicCourage: number;      // 0 - 100
-    cognitiveAdaptability: number; // 0 - 100
-    selectiveFocus: number;        // 0 - 100
-    impulseControl: number;        // 0 - 100
-    collaborationTrust: number;    // 0 - 100
-    strategicResilience: number;   // 0 - 100
+    riskTolerance: number;               // 0 - 100
+    learningAgility: number;             // 0 - 100
+    criticalThinking: number;            // 0 - 100
+    decisionMakingUnderPressure: number; // 0 - 100
+    collaborationMindset: number;        // 0 - 100
+    resilienceAndAdaptability: number;   // 0 - 100
   };
   overallIndex: number;
 }
@@ -91,53 +91,57 @@ export function calculateRadarProfile(data: CompleteAssessmentPayload): RadarCha
   const flankerInterference = normalizeInverted(game3_flanker.flankerEffectMs, 20, 180);
   const flankerIncongruentAcc = normalizeDirect(game3_flanker.incongruentAccuracy, 0.70, 1.0);
   const flankerImpulse = normalizeInverted(game3_flanker.impulsiveErrorCount, 0, 4);
-  const flankerPes = normalizeTarget(game3_flanker.postErrorSlowingMs, 0, 80, 250);
+  const flankerPes = normalizeTarget(game3_flanker.postErrorSlowingMs, -100, 80, 250);
 
   // Game 4: PGG
   const pggTrust = normalizeDirect(game4_pgg.initialContribution, 2, 10);
   const pggProsocial = normalizeDirect(game4_pgg.averageContribution, 2, 9);
   // freeRiderSensitivity is logged in raw coins (round-over-round contribution
-  // delta, endowment = 10/round); rescale to a 0–1 fraction of the endowment
-  // so it lines up with the 0.0/0.25/0.80 sweet-spot window below.
-  const pggBoundaries = normalizeTarget(game4_pgg.freeRiderSensitivity / 10, 0.0, 0.25, 0.80);
+  // delta, endowment = 10/round). Realistic values run ~0.1-0.5; a moderate
+  // pull-back (~0.5 coins/round) is the healthiest boundary-setting response,
+  // near-total defection reaction (~2.5) is over-reactive.
+  const pggBoundaries = normalizeTarget(game4_pgg.freeRiderSensitivity, 0.0, 0.5, 2.5);
   const pggDecayStability = normalizeTarget(game4_pgg.cooperationDecaySlope, -0.80, -0.15, 0.40);
 
   // --- Synthesis into 6 Core Axes ---
 
-  // 1. Strategic Courage & Risk Acumen — Game 1 (BART) 80% + Game 4 (PGG) 20%
-  const strategicCourage = (bartRiskAcumen * 0.50) + (pggTrust * 0.30) + (bartExplosionTolerance * 0.20);
+  // 1. Risk Tolerance — Game 1 (BART) 80% + Game 4 (PGG) 20%
+  const riskTolerance = (bartRiskAcumen * 0.50) + (pggTrust * 0.30) + (bartExplosionTolerance * 0.20);
 
-  // 2. Cognitive Adaptability & Shift — Game 2 (WCST) 85% + Game 1 (BART) 15%
-  const cognitiveAdaptability = (wcstPerseverative * 0.40) + (wcstCategories * 0.30) + (wcstFirstRuleSpeed * 0.20) + (wcstRuleMaintenance * 0.10);
+  // 2. Learning Agility — Game 2 (WCST) 85% + Game 1 (BART) 15%
+  const learningAgility = (wcstPerseverative * 0.40) + (wcstCategories * 0.30) + (wcstFirstRuleSpeed * 0.20) + (wcstRuleMaintenance * 0.10);
 
-  // 3. Selective Focus & Attentional Control — Game 3 (Flanker) 85% + Game 2 (WCST) 15%
-  const selectiveFocus = (flankerInterference * 0.50) + (flankerIncongruentAcc * 0.35) + (wcstRuleMaintenance * 0.15);
+  // 3. Critical Thinking — Game 3 (Flanker) 85% + Game 2 (WCST) 15%
+  const criticalThinking = (flankerInterference * 0.50) + (flankerIncongruentAcc * 0.35) + (wcstRuleMaintenance * 0.15);
 
-  // 4. Impulse & Quality Control — Game 3 (Flanker) 60% + Game 1 (BART) 40%
-  const impulseControl = (flankerIncongruentAcc * 0.40) + (flankerImpulse * 0.30) + (bartImpulseControl * 0.30);
+  // 4. Decision Making Under Pressure — Game 3 (Flanker) 60% + Game 1 (BART) 40%
+  const decisionMakingUnderPressure = (flankerIncongruentAcc * 0.40) + (flankerImpulse * 0.30) + (bartImpulseControl * 0.30);
 
-  // 5. Team Collaboration & Social Trust — Game 4 (PGG) 80% + Game 2 (WCST) 20%
-  const collaborationTrust = (pggProsocial * 0.50) + (pggTrust * 0.30) + (pggDecayStability * 0.20);
+  // 5. Collaboration Mindset — Game 4 (PGG) 80% + Game 2 (WCST) 20%
+  const collaborationMindset = (pggProsocial * 0.50) + (pggTrust * 0.30) + (pggDecayStability * 0.20);
 
-  // 6. Strategic Resilience & Boundaries — Game 4 (PGG) 60% + Game 3 (Flanker PES) 40%
-  const strategicResilience = (pggBoundaries * 0.40) + (pggDecayStability * 0.30) + (flankerPes * 0.30);
+  // 6. Resilience & Adaptability — Game 4 (PGG) 60% + Game 3 (Flanker PES) 40%
+  // postErrorSlowingMs gets a safe recovery zone below 0: real post-error RT is
+  // often small or slightly negative from natural noise, and shouldn't floor to
+  // 0 as if it were a total failure to adapt.
+  const resilienceAndAdaptability = (pggBoundaries * 0.40) + (pggDecayStability * 0.30) + (flankerPes * 0.30);
 
   const axes = {
-    strategicCourage: clamp(strategicCourage),
-    cognitiveAdaptability: clamp(cognitiveAdaptability),
-    selectiveFocus: clamp(selectiveFocus),
-    impulseControl: clamp(impulseControl),
-    collaborationTrust: clamp(collaborationTrust),
-    strategicResilience: clamp(strategicResilience),
+    riskTolerance: clamp(riskTolerance),
+    learningAgility: clamp(learningAgility),
+    criticalThinking: clamp(criticalThinking),
+    decisionMakingUnderPressure: clamp(decisionMakingUnderPressure),
+    collaborationMindset: clamp(collaborationMindset),
+    resilienceAndAdaptability: clamp(resilienceAndAdaptability),
   };
 
   const overallIndex = clamp(
-    (axes.strategicCourage +
-      axes.cognitiveAdaptability +
-      axes.selectiveFocus +
-      axes.impulseControl +
-      axes.collaborationTrust +
-      axes.strategicResilience) / 6
+    (axes.riskTolerance +
+      axes.learningAgility +
+      axes.criticalThinking +
+      axes.decisionMakingUnderPressure +
+      axes.collaborationMindset +
+      axes.resilienceAndAdaptability) / 6
   );
 
   return {
