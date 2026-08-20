@@ -50,6 +50,43 @@ function genSessionId(): string {
   return `sess_ktp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+// Saves a JSON string as a downloadable file. Uses the Artifact runtime's
+// downloads capability when available (window.claude); otherwise falls back
+// to the standard browser download mechanism (Blob + <a download>), which is
+// what's needed on a normal web deployment (e.g. GitHub Pages) where
+// window.claude doesn't exist.
+async function triggerJSONDownload(filename: string, json: string): Promise<'downloaded' | 'cancelled' | 'failed'> {
+  // @ts-ignore — window.claude is injected by the Artifact runtime
+  const hasClaudeRuntime = typeof window.claude?.use === 'function';
+
+  if (hasClaudeRuntime) {
+    try {
+      // @ts-ignore
+      const dl = await window.claude.use('downloads');
+      if (!dl) return 'failed';
+      await dl.save({ filename, data: json });
+      return 'downloaded';
+    } catch (err: any) {
+      return err?.code === 'declined' ? 'cancelled' : 'failed';
+    }
+  }
+
+  try {
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return 'downloaded';
+  } catch {
+    return 'failed';
+  }
+}
+
 // One shared session ID for every game played in this sitting, so a combined
 // summary can be attributed to a single session.
 const appSessionId = genSessionId();
@@ -418,16 +455,9 @@ async function exportJSON() {
     setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
   };
 
-  try {
-    // @ts-ignore — window.claude is injected by the Artifact runtime
-    const dl = await window.claude?.use?.('downloads') ?? null;
-    if (!dl) { reset('Download unavailable'); return; }
-    const json = JSON.stringify(savedPayload, null, 2);
-    await dl.save({ filename: `${savedPayload.sessionId}.json`, data: json });
-    reset('Downloaded ✓');
-  } catch (err: any) {
-    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
-  }
+  const json = JSON.stringify(savedPayload, null, 2);
+  const result = await triggerJSONDownload(`${savedPayload.sessionId}.json`, json);
+  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -966,16 +996,9 @@ async function exportGame2JSON() {
     setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
   };
 
-  try {
-    // @ts-ignore — window.claude injected by Artifact runtime
-    const dl = await window.claude?.use?.('downloads') ?? null;
-    if (!dl) { reset('Download unavailable'); return; }
-    const json = JSON.stringify(savedGame2Payload, null, 2);
-    await dl.save({ filename: `${savedGame2Payload.sessionId}.json`, data: json });
-    reset('Downloaded ✓');
-  } catch (err: any) {
-    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
-  }
+  const json = JSON.stringify(savedGame2Payload, null, 2);
+  const result = await triggerJSONDownload(`${savedGame2Payload.sessionId}.json`, json);
+  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -1232,16 +1255,9 @@ async function exportGame3JSON() {
     setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
   };
 
-  try {
-    // @ts-ignore — window.claude injected by Artifact runtime
-    const dl = await window.claude?.use?.('downloads') ?? null;
-    if (!dl) { reset('Download unavailable'); return; }
-    const json = JSON.stringify(savedGame3Payload, null, 2);
-    await dl.save({ filename: `${savedGame3Payload.sessionId}.json`, data: json });
-    reset('Downloaded ✓');
-  } catch (err: any) {
-    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
-  }
+  const json = JSON.stringify(savedGame3Payload, null, 2);
+  const result = await triggerJSONDownload(`${savedGame3Payload.sessionId}.json`, json);
+  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -1507,16 +1523,9 @@ async function exportGame4JSON() {
     setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
   };
 
-  try {
-    // @ts-ignore — window.claude injected by Artifact runtime
-    const dl = await window.claude?.use?.('downloads') ?? null;
-    if (!dl) { reset('Download unavailable'); return; }
-    const json = JSON.stringify(savedGame4Payload, null, 2);
-    await dl.save({ filename: `${savedGame4Payload.sessionId}.json`, data: json });
-    reset('Downloaded ✓');
-  } catch (err: any) {
-    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
-  }
+  const json = JSON.stringify(savedGame4Payload, null, 2);
+  const result = await triggerJSONDownload(`${savedGame4Payload.sessionId}.json`, json);
+  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -1745,14 +1754,7 @@ async function exportCombinedJSON(radar: RadarChartOutput) {
     radarProfile: radar,
   };
 
-  try {
-    // @ts-ignore — window.claude injected by Artifact runtime
-    const dl = await window.claude?.use?.('downloads') ?? null;
-    if (!dl) { reset('Download unavailable'); return; }
-    const json = JSON.stringify(combined, null, 2);
-    await dl.save({ filename: `${appSessionId}_combined_radar.json`, data: json });
-    reset('Downloaded ✓');
-  } catch (err: any) {
-    reset(err?.code === 'declined' ? 'Cancelled' : 'Download failed');
-  }
+  const json = JSON.stringify(combined, null, 2);
+  const result = await triggerJSONDownload(`${appSessionId}_combined_radar.json`, json);
+  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
