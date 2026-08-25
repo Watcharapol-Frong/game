@@ -10,6 +10,52 @@ import type { Game4Payload, PggRoundLog } from './games/game4-pgg/types';
 import { calculateRadarProfile } from './analytics/pipeline';
 import type { CompleteAssessmentPayload, RadarChartOutput } from './analytics/pipeline';
 
+import cactusStage0Src from './assets/cactus-stage-0.webp';
+import cactusStage1Src from './assets/cactus-stage-1.webp';
+import cactusStage2Src from './assets/cactus-stage-2.webp';
+import cactusStage3Src from './assets/cactus-stage-3.webp';
+import cactusStage4Src from './assets/cactus-stage-4.webp';
+import explosionSmallSrc from './assets/explosion-small.webp';
+import explosionBigSrc from './assets/explosion-big.webp';
+import btnPumpSrc from './assets/btn-pump.png';
+import btnBankSrc from './assets/btn-bank.png';
+import backgroundSrc from './assets/background.jpg';
+import iconCoinSrc from './assets/icon-coin.webp';
+import iconWaterSrc from './assets/icon-water.webp';
+
+const assetSources = {
+  cactusStage0: cactusStage0Src,
+  cactusStage1: cactusStage1Src,
+  cactusStage2: cactusStage2Src,
+  cactusStage3: cactusStage3Src,
+  cactusStage4: cactusStage4Src,
+  explosionSmall: explosionSmallSrc,
+  explosionBig: explosionBigSrc,
+  btnPumpImg: btnPumpSrc,
+  btnBankImg: btnBankSrc,
+  backgroundImg: backgroundSrc,
+  iconCoin: iconCoinSrc,
+  iconWater: iconWaterSrc,
+};
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+let assets: { [K in keyof typeof assetSources]: HTMLImageElement } | null = null;
+const assetsReady: Promise<void> = (async () => {
+  const keys = Object.keys(assetSources) as (keyof typeof assetSources)[];
+  const loaded = await Promise.all(keys.map((k) => loadImage(assetSources[k])));
+  assets = Object.fromEntries(keys.map((k, i) => [k, loaded[i]])) as typeof assets extends infer T
+    ? NonNullable<T>
+    : never;
+})();
+
 const MAX_PUMPS = 32;
 const TOTAL_TRIALS = 20;
 const CANVAS_W = 300;
@@ -182,12 +228,13 @@ function renderGame1Intro() {
 // ============================================================
 // TRIAL SCREEN
 // ============================================================
-function startGame() {
+async function startGame() {
   engine = new BartGameEngine(appSessionId);
   engine.initializeGame();
   currentPumps = 0;
   isBusy = false;
 
+  await assetsReady;
   renderTrialScreen();
 }
 
@@ -204,7 +251,10 @@ function renderTrialScreen() {
         </div>
         <div class="hud-score">
           <span class="hud-label">Total Points</span>
-          <span class="hud-value score-num" id="total-score">0</span>
+          <span class="hud-value score-num icon-value">
+            <img src="${assets!.iconCoin.src}" class="hud-inline-icon" alt="" />
+            <span id="total-score">0</span>
+          </span>
         </div>
       </div>
 
@@ -225,6 +275,7 @@ function renderTrialScreen() {
       </div>
 
       <div class="pump-info">
+        <img src="${assets!.iconWater.src}" class="hud-inline-icon" alt="" />
         <span class="pump-count-val" id="pump-count">0</span>
         <span>pumps</span>
         <span class="pump-info-divider">&nbsp;·&nbsp;</span>
@@ -233,8 +284,8 @@ function renderTrialScreen() {
       </div>
 
       <div class="action-row">
-        <button id="pump-btn" class="btn btn-pump">Pump</button>
-        <button id="bank-btn" class="btn btn-bank" disabled>Bank</button>
+        <button id="pump-btn" class="btn-img-action"><img src="${assets!.btnPumpImg.src}" alt="Pump" /></button>
+        <button id="bank-btn" class="btn-img-action" disabled><img src="${assets!.btnBankImg.src}" alt="Bank" /></button>
       </div>
     </div>
   `;
@@ -461,300 +512,60 @@ async function exportJSON() {
 }
 
 // ============================================================
-// CANVAS — CACTUS RENDERER
+// CANVAS — CACTUS RENDERER (image-based)
 // ============================================================
-function roundRect(
+
+// pumps 0 -> empty pot; 1-8/9-16/17-24/25-32 -> growth stages 1-4
+function getCactusStage(pumps: number): 0 | 1 | 2 | 3 | 4 {
+  if (pumps <= 0) return 0;
+  if (pumps <= 8) return 1;
+  if (pumps <= 16) return 2;
+  if (pumps <= 24) return 3;
+  return 4;
+}
+
+function drawImageAnchored(
   ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r: number
+  img: HTMLImageElement,
+  centerX: number,
+  bottomY: number,
+  displayWidth: number,
 ) {
-  r = Math.min(r, w / 2, Math.max(h / 2, 0));
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+  const displayHeight = displayWidth * (img.height / img.width);
+  ctx.drawImage(img, centerX - displayWidth / 2, bottomY - displayHeight, displayWidth, displayHeight);
 }
 
 function drawCactus(
   ctx: CanvasRenderingContext2D,
   pumps: number,
-  state: 'normal' | 'exploded'
+  state: 'normal' | 'exploded',
 ) {
+  if (!assets) return;
   const W = CANVAS_W;
   const H = CANVAS_H;
   ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(assets.backgroundImg, 0, 0, W, H);
 
-  // Sky gradient
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.60);
-  skyGrad.addColorStop(0, '#B8DCEF');
-  skyGrad.addColorStop(1, '#DAEEE4');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, W, H);
-
-  // Ground
-  const groundY = H - 98;
-  const groundGrad = ctx.createLinearGradient(0, groundY, 0, H);
-  groundGrad.addColorStop(0, '#C9A87A');
-  groundGrad.addColorStop(1, '#B08C5E');
-  ctx.fillStyle = groundGrad;
-  ctx.fillRect(0, groundY, W, H - groundY);
-
-  // Small pebbles on ground
-  ctx.fillStyle = 'rgba(100, 72, 30, 0.18)';
-  const pebbles = [[55,groundY+18],[120,groundY+35],[200,groundY+12],[250,groundY+40],[170,groundY+26],[80,groundY+48]];
-  for (const [px, py] of pebbles) {
-    ctx.beginPath();
-    ctx.ellipse(px, py, 5, 3, 0.3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // === Terracotta pot ===
   const cx = W / 2;
-  const potTopY = groundY - 6;
-  const potBotY = H - 46;
-  const potTopHW = 44;
-  const potBotHW = 33;
-  const rimH = 11;
+  const groundY = H - 56;
+  const stage = getCactusStage(pumps);
 
-  // Pot shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.08)';
-  ctx.beginPath();
-  ctx.ellipse(cx, potBotY + 6, 32, 7, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Pot body
-  const potGrad = ctx.createLinearGradient(cx - potTopHW, 0, cx + potTopHW, 0);
-  potGrad.addColorStop(0, '#9B4F1A');
-  potGrad.addColorStop(0.35, '#C46624');
-  potGrad.addColorStop(0.65, '#D4783A');
-  potGrad.addColorStop(1, '#9B4F1A');
-  ctx.fillStyle = potGrad;
-  ctx.beginPath();
-  ctx.moveTo(cx - potTopHW, potTopY + rimH);
-  ctx.lineTo(cx + potTopHW, potTopY + rimH);
-  ctx.lineTo(cx + potBotHW, potBotY);
-  ctx.lineTo(cx - potBotHW, potBotY);
-  ctx.closePath();
-  ctx.fill();
-
-  // Pot rim
-  const rimGrad = ctx.createLinearGradient(0, potTopY, 0, potTopY + rimH);
-  rimGrad.addColorStop(0, '#E08040');
-  rimGrad.addColorStop(1, '#B85C20');
-  ctx.fillStyle = rimGrad;
-  roundRect(ctx, cx - potTopHW - 4, potTopY, (potTopHW + 4) * 2, rimH, 5);
-  ctx.fill();
-
-  // Pot highlight stripe
-  ctx.fillStyle = 'rgba(255,180,100,0.18)';
-  ctx.beginPath();
-  ctx.moveTo(cx - potTopHW + 8, potTopY + rimH + 6);
-  ctx.lineTo(cx - potTopHW + 17, potTopY + rimH + 6);
-  ctx.lineTo(cx - potBotHW + 8, potBotY - 8);
-  ctx.lineTo(cx - potBotHW, potBotY - 8);
-  ctx.closePath();
-  ctx.fill();
-
-  // Soil top
-  ctx.fillStyle = '#4A2B0F';
-  roundRect(ctx, cx - potTopHW + 5, potTopY + 3, (potTopHW - 5) * 2, rimH - 4, 3);
-  ctx.fill();
-
-  // === Exploded state ===
   if (state === 'exploded') {
-    drawBurst(ctx, cx, potTopY - 20);
+    const explosionImg = stage <= 2 ? assets.explosionSmall : assets.explosionBig;
+    drawImageAnchored(ctx, explosionImg, cx, groundY, 190);
     return;
   }
 
-  // === Empty / sprout ===
-  if (pumps === 0) {
-    drawSprout(ctx, cx, potTopY);
-    return;
-  }
-
-  // === Growing cactus ===
-  const progress = pumps / MAX_PUMPS;
-  const minH = 28, maxH = 198;
-  const bodyH = minH + (maxH - minH) * progress;
-  const bodyW = 32 + progress * 8;
-  const bodyBottom = potTopY - 2;
-  const bodyTop = bodyBottom - bodyH;
-  const bodyX = cx - bodyW / 2;
-
-  // Color: healthy green → stressed yellow-green
-  const hue = Math.round(148 - progress * 35);
-  const sat = Math.round(52 - progress * 12);
-  const lum = Math.round(35 - progress * 6);
-  const cBase = `hsl(${hue},${sat}%,${lum}%)`;
-  const cLight = `hsl(${hue + 8},${sat - 8}%,${lum + 14}%)`;
-  const cDark  = `hsl(${hue - 8},${sat + 6}%,${lum - 10}%)`;
-
-  // ---- Arms (appear at 50% capacity) ----
-  if (progress > 0.50) {
-    const armProg = Math.min(1, (progress - 0.50) / 0.50);
-    const armLen  = armProg * 52;
-    const armH    = 20;
-    const armY    = bodyBottom - bodyH * 0.58;
-    const armR    = 9;
-
-    // Left arm body
-    ctx.fillStyle = cBase;
-    roundRect(ctx, bodyX - armLen, armY - armH / 2, armLen + bodyW * 0.3, armH, armR);
-    ctx.fill();
-    // Left arm tip (grows upward)
-    const leftTipH = armLen * 0.55;
-    roundRect(ctx, bodyX - armLen, armY - armH / 2 - leftTipH, armH, leftTipH + armR, armR);
-    ctx.fill();
-
-    // Right arm body
-    roundRect(ctx, cx + bodyW / 2 - bodyW * 0.3, armY - armH / 2, armLen + bodyW * 0.3, armH, armR);
-    ctx.fill();
-    // Right arm tip
-    roundRect(ctx, cx + bodyW / 2 + armLen - armH, armY - armH / 2 - leftTipH, armH, leftTipH + armR, armR);
-    ctx.fill();
-
-    // Arm spines
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-    ctx.lineWidth = 1.2;
-    ctx.lineCap = 'round';
-    for (let i = 0; i < 3; i++) {
-      const frac = 0.25 + i * 0.25;
-      const lx = bodyX - armLen * frac;
-      const rx = cx + bodyW / 2 + armLen * frac;
-      for (const [bx, dir] of [[lx, -1], [rx, 1]] as [number, number][]) {
-        ctx.beginPath(); ctx.moveTo(bx, armY - armH / 2); ctx.lineTo(bx + dir * 5, armY - armH / 2 - 4); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx, armY + armH / 2); ctx.lineTo(bx + dir * 5, armY + armH / 2 + 4); ctx.stroke();
-      }
-    }
-  }
-
-  // ---- Main body ----
-  const bodyGrad = ctx.createLinearGradient(bodyX, 0, bodyX + bodyW, 0);
-  bodyGrad.addColorStop(0,    cDark);
-  bodyGrad.addColorStop(0.28, cBase);
-  bodyGrad.addColorStop(0.62, cLight);
-  bodyGrad.addColorStop(1,    cDark);
-  ctx.fillStyle = bodyGrad;
-  roundRect(ctx, bodyX, bodyTop, bodyW, bodyH, Math.min(bodyW / 2, 15));
-  ctx.fill();
-
-  // ---- Spines ----
-  ctx.strokeStyle = 'rgba(255,255,255,0.52)';
-  ctx.lineWidth = 1.3;
-  ctx.lineCap = 'round';
-  const spineRows = Math.max(3, Math.floor(pumps / 2.5));
-  for (let i = 0; i < spineRows; i++) {
-    const sy = bodyTop + (i + 0.5) * (bodyH / spineRows);
-    const offset = (i % 2 === 0) ? 2 : -2;
-    ctx.beginPath(); ctx.moveTo(bodyX,          sy + offset); ctx.lineTo(bodyX - 7,          sy + offset - 3); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(bodyX,          sy + offset); ctx.lineTo(bodyX - 7,          sy + offset + 3); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(bodyX + bodyW, sy - offset); ctx.lineTo(bodyX + bodyW + 7, sy - offset - 3); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(bodyX + bodyW, sy - offset); ctx.lineTo(bodyX + bodyW + 7, sy - offset + 3); ctx.stroke();
-  }
-
-  // ---- Face ----
-  const faceY = bodyTop + bodyH * 0.30;
-  ctx.fillStyle = 'rgba(15, 38, 18, 0.70)';
-  ctx.beginPath(); ctx.arc(cx - 6, faceY, 2.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(cx + 6, faceY, 2.5, 0, Math.PI * 2); ctx.fill();
-
-  // Mouth
-  ctx.strokeStyle = 'rgba(15, 38, 18, 0.70)';
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  if (progress < 0.60) {
-    ctx.arc(cx, faceY + 7, 5, 0.12 * Math.PI, 0.88 * Math.PI);
-  } else if (progress < 0.82) {
-    ctx.moveTo(cx - 5, faceY + 8); ctx.lineTo(cx + 5, faceY + 8);
-  } else {
-    ctx.arc(cx, faceY + 13, 5, 1.12 * Math.PI, 1.88 * Math.PI);
-  }
-  ctx.stroke();
-
-  // Sweat drop at high risk
-  if (progress > 0.78) {
-    ctx.fillStyle = 'rgba(80, 170, 230, 0.72)';
-    const sx = cx + 13, sy = faceY + 1;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy - 6);
-    ctx.quadraticCurveTo(sx + 5, sy, sx, sy + 4);
-    ctx.quadraticCurveTo(sx - 5, sy, sx, sy - 6);
-    ctx.fill();
-  }
-
-  // Flower on tip when small
-  if (progress < 0.28) {
-    drawFlower(ctx, cx, bodyTop - 1);
-  }
+  const stageImages = [
+    assets.cactusStage0,
+    assets.cactusStage1,
+    assets.cactusStage2,
+    assets.cactusStage3,
+    assets.cactusStage4,
+  ];
+  drawImageAnchored(ctx, stageImages[stage], cx, groundY, 150);
 }
 
-function drawSprout(ctx: CanvasRenderingContext2D, cx: number, potTopY: number) {
-  ctx.fillStyle = '#2D6A4F';
-  roundRect(ctx, cx - 2.5, potTopY - 18, 5, 18, 2.5);
-  ctx.fill();
-
-  ctx.fillStyle = '#40916C';
-  ctx.beginPath(); ctx.ellipse(cx - 9, potTopY - 15, 8, 4.5, -0.45, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(cx + 9, potTopY - 15, 8, 4.5, 0.45, 0, Math.PI * 2);  ctx.fill();
-}
-
-function drawFlower(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
-  const petalColors = ['#FFB3CE', '#FFAEC0', '#FFC8D8', '#FFB8CC', '#FFBAD0'];
-  for (let i = 0; i < 5; i++) {
-    const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
-    ctx.fillStyle = petalColors[i];
-    ctx.beginPath();
-    ctx.ellipse(cx + Math.cos(angle) * 5.5, cy + Math.sin(angle) * 5.5, 4.5, 3, angle, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = '#FFD60A';
-  ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
-}
-
-function drawBurst(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
-  // Warm red wash
-  ctx.fillStyle = 'rgba(217, 95, 39, 0.20)';
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-
-  // Burst rays
-  ctx.strokeStyle = '#D95F27';
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = 'round';
-  const numRays = 14;
-  for (let i = 0; i < numRays; i++) {
-    const angle = (i / numRays) * Math.PI * 2;
-    const innerR = 14;
-    const outerR = 22 + (i % 3) * 14;
-    ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(angle) * innerR, cy + Math.sin(angle) * innerR);
-    ctx.lineTo(cx + Math.cos(angle) * outerR, cy + Math.sin(angle) * outerR);
-    ctx.stroke();
-  }
-
-  // Debris dots
-  ctx.fillStyle = '#D95F27';
-  for (let i = 0; i < 8; i++) {
-    const angle = (i / 8) * Math.PI * 2 + 0.2;
-    const r = 30 + (i % 3) * 12;
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r, 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Central X
-  ctx.strokeStyle = '#D95F27';
-  ctx.lineWidth = 4.5;
-  ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(cx - 16, cy - 16); ctx.lineTo(cx + 16, cy + 16); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx + 16, cy - 16); ctx.lineTo(cx - 16, cy + 16); ctx.stroke();
-}
 
 // ============================================================
 // GAME 2 — WCST (Poom's Wagashi Sorting)

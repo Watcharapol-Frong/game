@@ -254,53 +254,35 @@ body {
   border-color: var(--accent);
 }
 
-.btn-pump {
-  background: var(--accent);
-  color: #fff;
+/* Image-based Pump/Bank action buttons (icon + baked-in label) */
+.btn-img-action {
   flex: 1;
   min-height: 56px;
-  font-size: 17px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.28);
-  border-radius: var(--radius-sm);
+  max-width: 96px;
+  margin: 0 auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.15s;
 }
 
-.btn-pump:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: 0 4px 14px rgba(45, 106, 79, 0.35);
+.btn-img-action img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
-.btn-pump:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.btn-img-action:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
 
-.btn-bank {
-  background: var(--surface-2);
-  color: var(--text-muted);
-  border: 1.5px solid var(--border);
-  flex: 1;
-  min-height: 56px;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+.btn-img-action:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
-.btn-bank:not(:disabled) {
-  background: var(--gold-faint);
-  color: var(--gold);
-  border-color: var(--gold);
-  font-weight: 600;
-}
-
-.btn-bank:hover:not(:disabled) {
-  background: var(--gold);
-  color: #fff;
-}
-
-.btn-bank:disabled {
-  opacity: 0.35;
+.btn-img-action:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -362,6 +344,20 @@ body {
 
 .score-num {
   color: var(--gold);
+}
+
+.icon-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hud-inline-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 /* Canvas area */
