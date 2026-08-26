@@ -575,7 +575,7 @@ body {
 }
 
 .wcst-scene {
-  height: 130px;
+  height: 165px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -584,8 +584,8 @@ body {
 .wcst-target-row {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  padding: 16px 20px 12px;
+  gap: 10px;
+  padding: 16px 16px 12px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
 }
@@ -637,9 +637,10 @@ body {
    margin for the wagashi pieces sitting on it. */
 .wagashi-card {
   position: relative;
-  width: 132px;
+  width: 140px;
   aspect-ratio: 345 / 194;
   border-radius: var(--radius-md);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -653,7 +654,7 @@ body {
 
 .wagashi-card.target-plate {
   cursor: pointer;
-  width: 122px;
+  width: 128px;
 }
 
 .wagashi-card.target-plate:hover {
@@ -672,7 +673,7 @@ body {
 }
 
 .wagashi-card.presented {
-  width: 190px;
+  width: 220px;
   cursor: default;
   box-shadow: var(--shadow-md);
 }
