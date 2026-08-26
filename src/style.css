@@ -599,21 +599,29 @@ body {
   color: var(--text-faint);
 }
 
-.wcst-feedback-row {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 4px 20px 16px;
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 400;
-  transition: color .15s;
+.wcst-feedback-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 40;
+  transform: translate(-50%, -50%) scale(.7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s, transform .15s;
 }
-.wcst-feedback-row.correct   { color: var(--accent); }
-.wcst-feedback-row.incorrect { color: var(--danger); }
-.wcst-feedback-icon { width: 22px; height: 22px; }
+.wcst-feedback-overlay:not(:empty) {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.wcst-feedback-icon {
+  width: 100px;
+  height: 100px;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,.35));
+}
+@media (prefers-reduced-motion: reduce) {
+  .wcst-feedback-overlay { transition: opacity .15s; transform: translate(-50%, -50%); }
+  .wcst-feedback-overlay:not(:empty) { transform: translate(-50%, -50%); }
+}
 
 /* ---- Wagashi card ---- */
 /* The tray art is a landscape plate (~1.78:1) with its own cream frame baked

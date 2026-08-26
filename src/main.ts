@@ -829,7 +829,7 @@ function renderGame2Trial(card: WagashiCard) {
       <div class="wcst-presented-wrap">
         <span class="wcst-presented-label">Sort this wagashi</span>
         <div id="presented-card">${wagashiCardHTML(card, 'presented')}</div>
-        <div class="wcst-feedback-row" id="wcst-feedback" aria-live="assertive"></div>
+        <div class="wcst-feedback-overlay" id="wcst-feedback" aria-live="assertive"></div>
       </div>
     </div>
   `;
@@ -860,8 +860,9 @@ function handleGame2Choice(targetIndex: number) {
   const fb = qs<HTMLElement>('#wcst-feedback');
   if (fb) {
     const icon = result.isCorrect ? wcstIconCorrectSrc : wcstIconIncorrectSrc;
-    fb.innerHTML = `<img class="wcst-feedback-icon" src="${icon}" alt="">${result.isCorrect ? 'Correct' : 'Incorrect'}`;
-    fb.className = `wcst-feedback-row ${result.isCorrect ? 'correct' : 'incorrect'}`;
+    const label = result.isCorrect ? 'Correct' : 'Incorrect';
+    fb.innerHTML = `<img class="wcst-feedback-icon" src="${icon}" alt="${label}">`;
+    fb.className = `wcst-feedback-overlay ${result.isCorrect ? 'correct' : 'incorrect'}`;
   }
 
   setTimeout(() => {
@@ -877,7 +878,7 @@ function handleGame2Choice(targetIndex: number) {
       if (trialEl) {
         trialEl.innerHTML = `${wcstEngine.getCurrentTrialIndex()} <span class="hud-of">of ${WCST_TOTAL}</span>`;
       }
-      if (fb) { fb.textContent = ''; fb.className = 'wcst-feedback-row'; }
+      if (fb) { fb.innerHTML = ''; fb.className = 'wcst-feedback-overlay'; }
       setGame2PlatesDisabled(false);
       wcstBusy = false;
     }
