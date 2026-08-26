@@ -10,7 +10,7 @@ import type { Game4Payload, PggRoundLog } from './games/game4-pgg/types';
 import { calculateRadarProfile } from './analytics/pipeline';
 import type { CompleteAssessmentPayload, RadarChartOutput } from './analytics/pipeline';
 import {
-  unlockAudio, isMuted, toggleMuted, startAmbient, stopAmbient, isAmbientPlaying,
+  unlockAudio, isMuted, toggleMuted,
   playPump, playBank, playBurst, playCorrect, playIncorrect, playClick, playComplete,
 } from './shared/audio';
 
@@ -177,13 +177,7 @@ function renderMuteButton(): void {
     btn.className = 'mute-btn';
     document.body.appendChild(btn);
     btn.addEventListener('click', () => {
-      const nowMuted = toggleMuted();
-      if (nowMuted) {
-        stopAmbient();
-      } else {
-        unlockAudio();
-        startAmbient();
-      }
+      toggleMuted();
       syncMuteButton();
     });
   }
@@ -198,12 +192,6 @@ function syncMuteButton(): void {
   btn.setAttribute('aria-label', off ? 'Unmute sound' : 'Mute sound');
   btn.setAttribute('aria-pressed', String(off));
   btn.classList.toggle('is-muted', off);
-}
-
-/** Starts the background pad once, on the first gesture that begins a game. */
-function ensureAmbient(): void {
-  unlockAudio();
-  if (!isMuted() && !isAmbientPlaying()) startAmbient();
 }
 
 // ---- Entry ----
@@ -286,7 +274,6 @@ function renderGame1Intro() {
 // TRIAL SCREEN
 // ============================================================
 async function startGame() {
-  ensureAmbient();
   engine = new BartGameEngine(appSessionId);
   engine.initializeGame();
   currentPumps = 0;
@@ -790,7 +777,6 @@ function renderGame2Intro() {
 
 // ---- Start game 2 ----
 function startGame2() {
-  ensureAmbient();
   wcstEngine = new WcstGameEngine(appSessionId);
   const firstCard = wcstEngine.initializeGame();
   wcstBusy = false;
@@ -1045,7 +1031,6 @@ function renderGame3Intro() {
 
 // ---- Start game 3 ----
 function startGame3() {
-  ensureAmbient();
   flankerEngine = new MeenFocusEngine(appSessionId);
   flankerEngine.initSequence();
   flankerBusy = false;
@@ -1290,7 +1275,6 @@ function renderGame4Intro() {
 
 // ---- Start game 4 ----
 function startGame4() {
-  ensureAmbient();
   pggEngine = new KongNeighborhoodEngine(appSessionId);
   pggBusy = false;
   const roundInfo = pggEngine.startRound();

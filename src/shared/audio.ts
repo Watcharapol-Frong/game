@@ -1,9 +1,11 @@
-// Sound for the psychometric session.
+// Sound effects for the psychometric session.
 //
-// Everything here is synthesised with the Web Audio API rather than loaded from
-// audio files: the session already ships ~1.3 MB of art inlined into a single
-// artifact, and a background loop alone would roughly double that. Synthesis
-// costs no download and no decode.
+// Synthesised with the Web Audio API rather than loaded from audio files, so
+// this costs no download and no decode. There is deliberately no background
+// music: a continuous ambient track is an uncontrolled arousal confound for
+// tasks like BART's risk-taking and PGG's trust decisions, and unreliable
+// autoplay would make exposure inconsistent between players anyway. Only
+// brief, event-triggered feedback plays.
 //
 // Two constraints shape the design:
 //   * Browsers refuse to start audio before a user gesture, so the context is
@@ -15,8 +17,6 @@ const MUTE_STORAGE_KEY = 'ktp_audio_muted';
 
 let ctx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
-let ambientGain: GainNode | null = null;
-let ambientNodes: { stop: () => void } | null = null;
 let muted = readMutedPreference();
 let unavailable = false;
 
@@ -217,82 +217,3 @@ export function playComplete(): void {
   });
 }
 
-// ---- ambient background ------------------------------------------------
-
-/**
- * A soft, slowly-breathing pad. Deliberately quiet and static: this plays under
- * a timed cognitive test, so it must not pull attention or cue the beat.
- */
-export function startAmbient(): void {
-  const c = getCtx();
-  if (!c || !masterGain || ambientNodes) return;
-
-  ambientGain = c.createGain();
-  ambientGain.gain.value = 0.0001;
-  ambientGain.gain.setTargetAtTime(0.10, c.currentTime, 1.5);
-
-  const filter = c.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 700;
-
-  filter.connect(ambientGain);
-  ambientGain.connect(masterGain);
-
-  // A quiet open chord: root, fifth, octave, slightly detuned so it drifts.
-  const voices = [110, 164.81, 220].map((freq, i) => {
-    const osc = c.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    osc.detune.value = (i - 1) * 6;
-
-    const vGain = c.createGain();
-    vGain.gain.value = 0.34;
-
-    // Slow independent swell per voice so the pad never sits still.
-    const lfo = c.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = 0.05 + i * 0.017;
-    const lfoDepth = c.createGain();
-    lfoDepth.gain.value = 0.16;
-    lfo.connect(lfoDepth);
-    lfoDepth.connect(vGain.gain);
-
-    osc.connect(vGain);
-    vGain.connect(filter);
-    osc.start();
-    lfo.start();
-    return { osc, lfo, vGain, lfoDepth };
-  });
-
-  ambientNodes = {
-    stop: () => {
-      const now = c.currentTime;
-      ambientGain?.gain.cancelScheduledValues(now);
-      ambientGain?.gain.setTargetAtTime(0.0001, now, 0.4);
-      voices.forEach(({ osc, lfo, vGain, lfoDepth }) => {
-        osc.stop(now + 1.6);
-        lfo.stop(now + 1.6);
-        osc.onended = () => {
-          osc.disconnect();
-          lfo.disconnect();
-          vGain.disconnect();
-          lfoDepth.disconnect();
-        };
-      });
-      setTimeout(() => {
-        filter.disconnect();
-        ambientGain?.disconnect();
-        ambientGain = null;
-      }, 1800);
-    },
-  };
-}
-
-export function stopAmbient(): void {
-  ambientNodes?.stop();
-  ambientNodes = null;
-}
-
-export function isAmbientPlaying(): boolean {
-  return ambientNodes !== null;
-}
