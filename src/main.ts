@@ -9,6 +9,10 @@ import { KongNeighborhoodEngine } from './games/game4-pgg/engine';
 import type { Game4Payload, PggRoundLog } from './games/game4-pgg/types';
 import { calculateRadarProfile } from './analytics/pipeline';
 import type { CompleteAssessmentPayload, RadarChartOutput } from './analytics/pipeline';
+import {
+  unlockAudio, isMuted, toggleMuted, startAmbient, stopAmbient, isAmbientPlaying,
+  playPump, playBank, playBurst, playCorrect, playIncorrect, playClick, playComplete,
+} from './shared/audio';
 
 import cactusStage0Src from './assets/cactus-stage-0.png';
 import cactusStage1Src from './assets/cactus-stage-1.png';
@@ -158,7 +162,52 @@ function attachCombinedResultsButton(): void {
   qs<HTMLButtonElement>('#view-summary-btn')?.addEventListener('click', renderSessionSummary);
 }
 
+// ---- Audio ----
+
+// Browsers block audio until a real user gesture, so the first click anywhere
+// unlocks the context. Kept as a capture-phase listener so it runs before the
+// handler that may want to play a sound on that same click.
+document.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
+
+function renderMuteButton(): void {
+  let btn = qs<HTMLButtonElement>('#mute-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'mute-btn';
+    btn.className = 'mute-btn';
+    document.body.appendChild(btn);
+    btn.addEventListener('click', () => {
+      const nowMuted = toggleMuted();
+      if (nowMuted) {
+        stopAmbient();
+      } else {
+        unlockAudio();
+        startAmbient();
+      }
+      syncMuteButton();
+    });
+  }
+  syncMuteButton();
+}
+
+function syncMuteButton(): void {
+  const btn = qs<HTMLButtonElement>('#mute-btn');
+  if (!btn) return;
+  const off = isMuted();
+  btn.textContent = off ? '🔇' : '🔊';
+  btn.setAttribute('aria-label', off ? 'Unmute sound' : 'Mute sound');
+  btn.setAttribute('aria-pressed', String(off));
+  btn.classList.toggle('is-muted', off);
+}
+
+/** Starts the background pad once, on the first gesture that begins a game. */
+function ensureAmbient(): void {
+  unlockAudio();
+  if (!isMuted() && !isAmbientPlaying()) startAmbient();
+}
+
 // ---- Entry ----
+renderMuteButton();
 renderIntro();
 
 // ============================================================
@@ -237,6 +286,7 @@ function renderGame1Intro() {
 // TRIAL SCREEN
 // ============================================================
 async function startGame() {
+  ensureAmbient();
   engine = new BartGameEngine(appSessionId);
   engine.initializeGame();
   currentPumps = 0;
@@ -319,6 +369,7 @@ function handlePump() {
     drawCactus(canvasCtx!, currentPumps, 'exploded');
     updateHUD();
     // The burst art carries the moment on its own — no text overlay or tint.
+    playBurst();
     shakeCanvas();
 
     setTimeout(() => {
@@ -337,6 +388,9 @@ function handlePump() {
   } else {
     drawCactus(canvasCtx!, currentPumps, 'normal');
     updateHUD();
+    // Pitch climbs with the plant so later pumps sound more strained. Scaled
+    // against the stage bands, not the hidden ceiling, so it leaks nothing.
+    playPump(Math.min(1, (getCactusStage(currentPumps) - 1) / 3));
     setButtonsEnabled(true, true);
     isBusy = false;
   }
@@ -347,6 +401,7 @@ function handleBank() {
   isBusy = true;
 
   const result = engine.bank();
+  playBank();
   showOverlay(`✓ Banked ${result.bankedPoints} pts`, 'overlay-bank');
 
   setTimeout(() => {
@@ -415,6 +470,7 @@ function removeShake() {
 // GAME OVER SCREEN
 // ============================================================
 function renderGameOver() {
+  playComplete();
   savedPayload = engine.getPayload();
   const m = savedPayload.summaryMetrics;
   const adapt = m.postExplosionAdaptationDelta;
@@ -734,6 +790,7 @@ function renderGame2Intro() {
 
 // ---- Start game 2 ----
 function startGame2() {
+  ensureAmbient();
   wcstEngine = new WcstGameEngine(appSessionId);
   const firstCard = wcstEngine.initializeGame();
   wcstBusy = false;
@@ -797,6 +854,7 @@ function handleGame2Choice(targetIndex: number) {
   if (correctEl) correctEl.textContent = String(wcstCorrectCount);
 
   // Show feedback
+  if (result.isCorrect) playCorrect(); else playIncorrect();
   const fb = qs<HTMLElement>('#wcst-feedback');
   if (fb) {
     fb.textContent = result.isCorrect ? '✓ Correct' : '✗ Incorrect';
@@ -833,6 +891,7 @@ function setGame2PlatesDisabled(disabled: boolean) {
 
 // ---- Game 2 game-over screen ----
 function renderGame2GameOver() {
+  playComplete();
   savedGame2Payload = wcstEngine.getPayload();
   const m = savedGame2Payload.summaryMetrics;
   const peRate = m.totalErrors > 0 ? `${(m.perseverativeErrorRate * 100).toFixed(0)}%` : 'N/A';
@@ -986,6 +1045,7 @@ function renderGame3Intro() {
 
 // ---- Start game 3 ----
 function startGame3() {
+  ensureAmbient();
   flankerEngine = new MeenFocusEngine(appSessionId);
   flankerEngine.initSequence();
   flankerBusy = false;
@@ -1066,6 +1126,10 @@ function submitFlankerResponse(response: TargetDirection | 'timeout') {
 
   const result = flankerEngine.handleResponse(response);
 
+  // Fired only after handleResponse() has already stamped the reaction time, so
+  // audio scheduling can't perturb the measurement.
+  if (result.isCorrect) playCorrect(); else playIncorrect();
+
   // Show feedback
   const screen = document.getElementById('flanker-screen');
   const fb = document.getElementById('flanker-feedback');
@@ -1093,6 +1157,7 @@ function submitFlankerResponse(response: TargetDirection | 'timeout') {
 
 // ---- Game 3 game-over screen ----
 function renderGame3GameOver() {
+  playComplete();
   savedGame3Payload = flankerEngine.getPayload();
   const m = savedGame3Payload.summaryMetrics;
   const fxStr = m.flankerEffectMs >= 0 ? `+${m.flankerEffectMs}` : String(m.flankerEffectMs);
@@ -1225,6 +1290,7 @@ function renderGame4Intro() {
 
 // ---- Start game 4 ----
 function startGame4() {
+  ensureAmbient();
   pggEngine = new KongNeighborhoodEngine(appSessionId);
   pggBusy = false;
   const roundInfo = pggEngine.startRound();
@@ -1313,6 +1379,8 @@ function submitPggRound(contribution: number, isTimeout: boolean) {
   clearPggCountdown();
 
   const roundLog = pggEngine.submitContribution(contribution, isTimeout);
+  // Coins land when the pool pays out; a timeout forfeits the round instead.
+  if (isTimeout) playIncorrect(); else playBank();
   pggLastCumulative = roundLog.userCumulativePayoff;
   renderGame4RoundResult(roundLog);
 }
@@ -1360,6 +1428,7 @@ function renderGame4RoundResult(roundLog: PggRoundLog) {
   `;
 
   qs<HTMLButtonElement>('#pgg-continue-btn')!.addEventListener('click', () => {
+    playClick();
     pggBusy = false;
     if (isLastRound) {
       renderGame4GameOver();
@@ -1372,6 +1441,7 @@ function renderGame4RoundResult(roundLog: PggRoundLog) {
 
 // ---- Game 4 game-over screen ----
 function renderGame4GameOver() {
+  playComplete();
   savedGame4Payload = pggEngine.getPayload();
   const m = savedGame4Payload.summaryMetrics;
   const slopeStr = m.cooperationDecaySlope >= 0 ? `+${m.cooperationDecaySlope}` : String(m.cooperationDecaySlope);
