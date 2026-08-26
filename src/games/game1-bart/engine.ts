@@ -116,16 +116,17 @@ export class BartGameEngine {
     const threshold = this.thresholds[this.currentTrialIndex - 1];
 
     if (this.currentTrialPumps >= threshold) {
+      const pumpsAtExplosion = this.currentTrialPumps;
       this.trialsLog.push({
         trialIndex: this.currentTrialIndex,
         explosionThreshold: threshold,
-        pumpsCompleted: this.currentTrialPumps,
+        pumpsCompleted: pumpsAtExplosion,
         isExploded: true,
         pointsEarned: 0,
         pumpTelemetry: [...this.currentTrialTelemetry],
       });
       this.advanceProgress();
-      return { isExploded: true, currentPumps: this.currentTrialPumps, unbankedPoints: 0 };
+      return { isExploded: true, currentPumps: pumpsAtExplosion, unbankedPoints: 0 };
     }
 
     return {

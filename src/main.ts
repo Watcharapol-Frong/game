@@ -10,18 +10,18 @@ import type { Game4Payload, PggRoundLog } from './games/game4-pgg/types';
 import { calculateRadarProfile } from './analytics/pipeline';
 import type { CompleteAssessmentPayload, RadarChartOutput } from './analytics/pipeline';
 
-import cactusStage0Src from './assets/cactus-stage-0.webp';
-import cactusStage1Src from './assets/cactus-stage-1.webp';
-import cactusStage2Src from './assets/cactus-stage-2.webp';
-import cactusStage3Src from './assets/cactus-stage-3.webp';
-import cactusStage4Src from './assets/cactus-stage-4.webp';
+import cactusStage0Src from './assets/cactus-stage-0.png';
+import cactusStage1Src from './assets/cactus-stage-1.png';
+import cactusStage2Src from './assets/cactus-stage-2.png';
+import cactusStage3Src from './assets/cactus-stage-3.png';
+import cactusStage4Src from './assets/cactus-stage-4.png';
 import explosionSmallSrc from './assets/explosion-small.webp';
 import explosionBigSrc from './assets/explosion-big.webp';
 import btnPumpSrc from './assets/btn-pump.png';
 import btnBankSrc from './assets/btn-bank.png';
 import backgroundSrc from './assets/background.jpg';
-import iconCoinSrc from './assets/icon-coin.webp';
-import iconWaterSrc from './assets/icon-water.webp';
+import iconCoinSrc from './assets/icon-coin.png';
+import iconWaterSrc from './assets/icon-water.png';
 
 const assetSources = {
   cactusStage0: cactusStage0Src,
