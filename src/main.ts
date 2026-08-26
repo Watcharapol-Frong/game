@@ -811,8 +811,8 @@ function renderGame2Trial(card: WagashiCard) {
     .join('');
 
   app.innerHTML = `
-    <div class="screen wcst-trial-screen">
-      <div class="hud">
+    <div class="screen wcst-trial-screen" style="background-image:url('${wcstBackgroundSrc}')">
+      <div class="hud hud-overlay">
         <div class="hud-trial">
           <span class="hud-label">Card</span>
           <span class="hud-value" id="wcst-trial-num">${trialIdx} <span class="hud-of">of ${WCST_TOTAL}</span></span>
@@ -822,8 +822,6 @@ function renderGame2Trial(card: WagashiCard) {
           <span class="hud-value score-num" id="wcst-correct">0</span>
         </div>
       </div>
-
-      <div class="wcst-scene" style="background-image:url('${wcstBackgroundSrc}')"></div>
 
       <div class="wcst-target-row" id="target-row">
         ${platesHTML}
