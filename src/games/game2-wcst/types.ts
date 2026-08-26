@@ -1,4 +1,4 @@
-export type WagashiColor = 'green' | 'pink' | 'yellow';
+export type WagashiColor = 'green' | 'blue' | 'red';
 export type WagashiShape = 'flower' | 'leaf' | 'round';
 export type WagashiCount = 1 | 2 | 3;
 export type SortingDimension = 'color' | 'shape' | 'count';

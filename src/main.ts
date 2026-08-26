@@ -27,6 +27,26 @@ import backgroundSrc from './assets/game1/background.jpg';
 import iconCoinSrc from './assets/game1/icon-coin.png';
 import iconWaterSrc from './assets/game1/icon-water.png';
 
+import wagashiFlowerSrc from './assets/game2/wagashi-flower.webp';
+import wagashiLeafSrc from './assets/game2/wagashi-leaf.webp';
+import wagashiRoundSrc from './assets/game2/wagashi-round.webp';
+import trayGreenSrc from './assets/game2/tray_green.webp';
+import trayBlueSrc from './assets/game2/tray_blue.webp';
+import trayRedSrc from './assets/game2/tray_red.webp';
+import wcstIconCorrectSrc from './assets/game2/icon-correct.webp';
+import wcstIconIncorrectSrc from './assets/game2/icon-incorrect.webp';
+
+const wagashiShapeSrc: Record<WagashiShape, string> = {
+  flower: wagashiFlowerSrc,
+  leaf: wagashiLeafSrc,
+  round: wagashiRoundSrc,
+};
+const wagashiTraySrc: Record<'green' | 'blue' | 'red', string> = {
+  green: trayGreenSrc,
+  blue: trayBlueSrc,
+  red: trayRedSrc,
+};
+
 const assetSources = {
   cactusStage0: cactusStage0Src,
   cactusStage1: cactusStage1Src,
@@ -727,16 +747,12 @@ function drawCactus(
 
 const WCST_TOTAL = 40;
 
-const SHAPE_EMOJI: Record<WagashiShape, string> = {
-  flower: '🌸',
-  leaf:   '🍃',
-  round:  '🟡',
-};
-
 function wagashiCardHTML(card: WagashiCard, extraClass = '', index?: number): string {
-  const symbols = Array.from({ length: card.count }, () => `<span class="card-symbol">${SHAPE_EMOJI[card.shape]}</span>`).join('');
+  const shapeSrc = wagashiShapeSrc[card.shape];
+  const symbols = Array.from({ length: card.count }, () => `<img class="card-symbol-img" src="${shapeSrc}" alt="">`).join('');
   const indexPin = index !== undefined ? `<span class="plate-index">${index + 1}</span>` : '';
-  return `<div class="wagashi-card color-${card.color} ${extraClass}" role="button" tabindex="0" aria-label="Plate ${index !== undefined ? index + 1 : ''}">${indexPin}<div class="card-symbols">${symbols}</div></div>`;
+  const traySrc = wagashiTraySrc[card.color];
+  return `<div class="wagashi-card ${extraClass}" style="background-image:url('${traySrc}')" role="button" tabindex="0" aria-label="Plate ${index !== undefined ? index + 1 : ''}">${indexPin}<div class="card-symbols">${symbols}</div></div>`;
 }
 
 // ---- Game 2 intro screen ----
@@ -843,7 +859,8 @@ function handleGame2Choice(targetIndex: number) {
   if (result.isCorrect) playCorrect(); else playIncorrect();
   const fb = qs<HTMLElement>('#wcst-feedback');
   if (fb) {
-    fb.textContent = result.isCorrect ? '✓ Correct' : '✗ Incorrect';
+    const icon = result.isCorrect ? wcstIconCorrectSrc : wcstIconIncorrectSrc;
+    fb.innerHTML = `<img class="wcst-feedback-icon" src="${icon}" alt="">${result.isCorrect ? 'Correct' : 'Incorrect'}`;
     fb.className = `wcst-feedback-row ${result.isCorrect ? 'correct' : 'incorrect'}`;
   }
 

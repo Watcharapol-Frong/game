@@ -604,6 +604,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 4px 20px 16px;
   font-family: var(--font-display);
   font-size: 20px;
@@ -612,6 +613,7 @@ body {
 }
 .wcst-feedback-row.correct   { color: var(--accent); }
 .wcst-feedback-row.incorrect { color: var(--danger); }
+.wcst-feedback-icon { width: 22px; height: 22px; }
 
 /* ---- Wagashi card ---- */
 .wagashi-card {
@@ -629,6 +631,9 @@ body {
   cursor: default;
   transition: border-color .15s, box-shadow .15s, transform .1s;
   box-shadow: var(--shadow-sm);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .wagashi-card.target-plate {
@@ -653,20 +658,6 @@ body {
   opacity: .55;
 }
 
-/* Color variants */
-.wagashi-card.color-green  { background: #E8F5EE; border-color: #52B788; }
-.wagashi-card.color-pink   { background: #FDE8EF; border-color: #E88FA8; }
-.wagashi-card.color-yellow { background: #FDF6E3; border-color: #C9A227; }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme=light]) .wagashi-card.color-green  { background: #1A3D2B; border-color: #52B788; }
-  :root:not([data-theme=light]) .wagashi-card.color-pink   { background: #3A1A26; border-color: #E88FA8; }
-  :root:not([data-theme=light]) .wagashi-card.color-yellow { background: #2E2510; border-color: #C9A227; }
-}
-:root[data-theme=dark] .wagashi-card.color-green  { background: #1A3D2B; border-color: #52B788; }
-:root[data-theme=dark] .wagashi-card.color-pink   { background: #3A1A26; border-color: #E88FA8; }
-:root[data-theme=dark] .wagashi-card.color-yellow { background: #2E2510; border-color: #C9A227; }
-
 .wagashi-card.presented {
   width: 120px;
   min-height: 136px;
@@ -683,12 +674,14 @@ body {
   line-height: 1;
 }
 
-.card-symbol {
-  font-size: 22px;
+.card-symbol-img {
+  width: 30px;
+  height: auto;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.25));
 }
 
-.wagashi-card.target-plate .card-symbol {
-  font-size: 18px;
+.wagashi-card.target-plate .card-symbol-img {
+  width: 24px;
 }
 
 .plate-index {

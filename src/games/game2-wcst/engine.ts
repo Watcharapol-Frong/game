@@ -23,8 +23,8 @@ export class WcstGameEngine {
 
   public readonly targetPlates: WagashiCard[] = [
     { count: 1, shape: 'flower', color: 'green' },
-    { count: 2, shape: 'leaf',   color: 'pink'  },
-    { count: 3, shape: 'round',  color: 'yellow' },
+    { count: 2, shape: 'leaf',   color: 'blue'  },
+    { count: 3, shape: 'round',  color: 'red'   },
   ];
 
   constructor(sessionId: string) {
@@ -42,7 +42,7 @@ export class WcstGameEngine {
   }
 
   private getRandomCard(): WagashiCard {
-    const colors: WagashiColor[] = ['green', 'pink', 'yellow'];
+    const colors: WagashiColor[] = ['green', 'blue', 'red'];
     const shapes: WagashiShape[] = ['flower', 'leaf', 'round'];
     const counts: WagashiCount[] = [1, 2, 3];
     return {
