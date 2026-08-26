@@ -35,6 +35,7 @@ import trayBlueSrc from './assets/game2/tray_blue.webp';
 import trayRedSrc from './assets/game2/tray_red.webp';
 import wcstIconCorrectSrc from './assets/game2/icon-correct.webp';
 import wcstIconIncorrectSrc from './assets/game2/icon-incorrect.webp';
+import wcstBackgroundSrc from './assets/game2/background.webp';
 
 const wagashiShapeSrc: Record<WagashiShape, string> = {
   flower: wagashiFlowerSrc,
@@ -821,6 +822,8 @@ function renderGame2Trial(card: WagashiCard) {
           <span class="hud-value score-num" id="wcst-correct">0</span>
         </div>
       </div>
+
+      <div class="wcst-scene" style="background-image:url('${wcstBackgroundSrc}')"></div>
 
       <div class="wcst-target-row" id="target-row">
         ${platesHTML}

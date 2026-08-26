@@ -574,6 +574,13 @@ body {
   overflow: hidden;
 }
 
+.wcst-scene {
+  height: 130px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .wcst-target-row {
   display: flex;
   justify-content: center;
