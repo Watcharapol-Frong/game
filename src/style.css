@@ -393,11 +393,6 @@ body {
   pointer-events: auto;
 }
 
-.canvas-overlay.overlay-explode {
-  background: rgba(217, 95, 39, 0.18);
-  color: var(--danger);
-}
-
 .canvas-overlay.overlay-bank {
   background: rgba(185, 121, 32, 0.15);
   color: var(--gold);

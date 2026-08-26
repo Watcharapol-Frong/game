@@ -277,12 +277,11 @@ function renderTrialScreen() {
       </div>
 
       <div class="pump-info">
-        <img src="${assets!.iconWater.src}" class="hud-inline-icon" alt="" />
+        <img src="${assets!.iconWater.src}" class="hud-inline-icon" alt="Pumps" />
         <span class="pump-count-val" id="pump-count">0</span>
-        <span>pumps</span>
         <span class="pump-info-divider">&nbsp;·&nbsp;</span>
+        <img src="${assets!.iconCoin.src}" class="hud-inline-icon" alt="Coins" />
         <span class="unbanked-val" id="unbanked-pts">0</span>
-        <span>pts ready</span>
       </div>
 
       <div class="action-row">
@@ -324,11 +323,10 @@ function handlePump() {
   if (result.isExploded) {
     drawCactus(canvasCtx!, currentPumps, 'exploded');
     updateHUD();
-    showOverlay('💥 Burst! 0 points.', 'overlay-explode');
+    // The burst art carries the moment on its own — no text overlay or tint.
     shakeCanvas();
 
     setTimeout(() => {
-      hideOverlay();
       removeShake();
       currentPumps = 0;
 
@@ -530,15 +528,120 @@ function getCactusStage(pumps: number): 0 | 1 | 2 | 3 | 4 {
   return 4;
 }
 
-function drawImageAnchored(
+interface ImageMetrics {
+  // Bounding box of non-transparent pixels, in source-image pixels.
+  x: number; y: number; w: number; h: number;
+  // Width and centre-x of the widest row in the bottom band of that content —
+  // for the plant art this is the pot, which is what should stay a consistent
+  // size across stages (the cactus above it varies a lot).
+  baseW: number;
+  baseCx: number;
+}
+
+const imageMetricsCache = new Map<HTMLImageElement, ImageMetrics>();
+
+// Art files carry wildly different amounts of transparent padding (the empty
+// pot has 21% dead space below it, the cactus stages only 4%), so anchoring by
+// raw image edges makes some stages float and renders them at inconsistent
+// scales. Measure the real content instead.
+function getImageMetrics(img: HTMLImageElement): ImageMetrics {
+  const cached = imageMetricsCache.get(img);
+  if (cached) return cached;
+
+  let metrics: ImageMetrics = {
+    x: 0, y: 0, w: img.width, h: img.height,
+    baseW: img.width, baseCx: img.width / 2,
+  };
+
+  try {
+    const off = document.createElement('canvas');
+    off.width = img.width;
+    off.height = img.height;
+    const octx = off.getContext('2d', { willReadFrequently: true })!;
+    octx.drawImage(img, 0, 0);
+    const data = octx.getImageData(0, 0, img.width, img.height).data;
+    const alphaAt = (x: number, y: number) => data[(y * img.width + x) * 4 + 3];
+
+    let minX = img.width, minY = img.height, maxX = -1, maxY = -1;
+    for (let y = 0; y < img.height; y++) {
+      for (let x = 0; x < img.width; x++) {
+        if (alphaAt(x, y) > 10) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (maxX >= minX && maxY >= minY) {
+      const bandTop = Math.max(minY, maxY - Math.round(img.height * 0.12));
+      let baseW = 0;
+      let baseCx = (minX + maxX) / 2;
+      for (let y = bandTop; y <= maxY; y++) {
+        let rowMin = img.width, rowMax = -1;
+        for (let x = 0; x < img.width; x++) {
+          if (alphaAt(x, y) > 10) {
+            if (x < rowMin) rowMin = x;
+            if (x > rowMax) rowMax = x;
+          }
+        }
+        if (rowMax >= rowMin && rowMax - rowMin + 1 > baseW) {
+          baseW = rowMax - rowMin + 1;
+          baseCx = (rowMin + rowMax) / 2;
+        }
+      }
+      metrics = {
+        x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1,
+        baseW: baseW || maxX - minX + 1,
+        baseCx,
+      };
+    }
+  } catch {
+    // getImageData can throw on a tainted canvas; fall back to raw image bounds.
+  }
+
+  imageMetricsCache.set(img, metrics);
+  return metrics;
+}
+
+// Draws the plant so its pot is `potWidth` wide, horizontally centred on
+// `centerX`, with the visible bottom of the art resting exactly on `groundY`.
+function drawPlant(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   centerX: number,
-  bottomY: number,
-  displayWidth: number,
+  groundY: number,
+  potWidth: number,
 ) {
-  const displayHeight = displayWidth * (img.height / img.width);
-  ctx.drawImage(img, centerX - displayWidth / 2, bottomY - displayHeight, displayWidth, displayHeight);
+  const m = getImageMetrics(img);
+  const scale = potWidth / m.baseW;
+  ctx.drawImage(
+    img,
+    centerX - m.baseCx * scale,
+    groundY - (m.y + m.h) * scale,
+    img.width * scale,
+    img.height * scale,
+  );
+}
+
+// Draws a radial burst centred on a point, sized by its visible content.
+function drawBurst(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  centerX: number,
+  centerY: number,
+  width: number,
+) {
+  const m = getImageMetrics(img);
+  const scale = width / m.w;
+  ctx.drawImage(
+    img,
+    centerX - (m.x + m.w / 2) * scale,
+    centerY - (m.y + m.h / 2) * scale,
+    img.width * scale,
+    img.height * scale,
+  );
 }
 
 // Scale-to-cover (like CSS `background-size: cover`): fills the canvas
@@ -568,15 +671,15 @@ function drawCactus(
   drawImageCover(ctx, assets.backgroundImg, W, H);
 
   const cx = W / 2;
-  // Sits on the tabletop surface in the background art (~80% down).
-  const groundY = H * 0.80;
+  // The tabletop surface line in the background art.
+  const groundY = H * 0.815;
   const stage = getCactusStage(pumps);
 
   if (state === 'exploded') {
     const explosionImg = stage <= 2 ? assets.explosionSmall : assets.explosionBig;
-    // Burst is centred on the plant rather than resting on the table.
-    const burstW = stage <= 2 ? 210 : 260;
-    drawImageAnchored(ctx, explosionImg, cx, groundY + burstW * 0.42, burstW);
+    const burstW = stage <= 2 ? 190 : 250;
+    // Centred just above the tabletop, where the plant was.
+    drawBurst(ctx, explosionImg, cx, groundY - burstW * 0.28, burstW);
     return;
   }
 
@@ -587,7 +690,10 @@ function drawCactus(
     assets.cactusStage3,
     assets.cactusStage4,
   ];
-  drawImageAnchored(ctx, stageImages[stage], cx, groundY, 130);
+  // The empty pot is drawn with a much wider rim relative to its base than the
+  // cactus-sheet pots, so it needs a smaller base target to read the same size.
+  const potWidths = [70, 84, 84, 84, 84];
+  drawPlant(ctx, stageImages[stage], cx, groundY, potWidths[stage]);
 }
 
 
