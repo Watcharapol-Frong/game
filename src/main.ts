@@ -15,7 +15,7 @@ import cactusStage1Src from './assets/cactus-stage-1.png';
 import cactusStage2Src from './assets/cactus-stage-2.png';
 import cactusStage3Src from './assets/cactus-stage-3.png';
 import cactusStage4Src from './assets/cactus-stage-4.png';
-import explosionSmallSrc from './assets/explosion-small.webp';
+import explosionSmallSrc from './assets/explosion-small.png';
 import explosionBigSrc from './assets/explosion-big.webp';
 import btnPumpSrc from './assets/btn-pump.png';
 import btnBankSrc from './assets/btn-bank.png';
@@ -58,8 +58,10 @@ const assetsReady: Promise<void> = (async () => {
 
 const MAX_PUMPS = 32;
 const TOTAL_TRIALS = 20;
-const CANVAS_W = 300;
+const CANVAS_W = 300; // fallback only; the live width is measured from the card
 const CANVAS_H = 380;
+// Actual CSS-pixel width of the trial canvas, set when the screen renders.
+let canvasW = CANVAS_W;
 
 // ---- Runtime state — Game 1 ----
 let engine: BartGameEngine;
@@ -291,10 +293,14 @@ function renderTrialScreen() {
   `;
 
   const canvas = qs<HTMLCanvasElement>('#cactus-canvas')!;
+  const wrap = qs<HTMLElement>('#canvas-wrap')!;
+  // Fill the card's full width so the background art reaches both edges
+  // (the wrap's own background used to show through as bars on the sides).
+  canvasW = Math.round(wrap.clientWidth) || CANVAS_W;
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = CANVAS_W * dpr;
+  canvas.width = canvasW * dpr;
   canvas.height = CANVAS_H * dpr;
-  canvas.style.width = `${CANVAS_W}px`;
+  canvas.style.width = `${canvasW}px`;
   canvas.style.height = `${CANVAS_H}px`;
 
   const ctx = canvas.getContext('2d')!;
@@ -535,24 +541,42 @@ function drawImageAnchored(
   ctx.drawImage(img, centerX - displayWidth / 2, bottomY - displayHeight, displayWidth, displayHeight);
 }
 
+// Scale-to-cover (like CSS `background-size: cover`): fills the canvas
+// completely, center-cropping whichever axis overflows, so the art always
+// reaches every edge without distortion at any canvas size.
+function drawImageCover(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  w: number,
+  h: number,
+) {
+  const scale = Math.max(w / img.width, h / img.height);
+  const drawW = img.width * scale;
+  const drawH = img.height * scale;
+  ctx.drawImage(img, (w - drawW) / 2, (h - drawH) / 2, drawW, drawH);
+}
+
 function drawCactus(
   ctx: CanvasRenderingContext2D,
   pumps: number,
   state: 'normal' | 'exploded',
 ) {
   if (!assets) return;
-  const W = CANVAS_W;
+  const W = canvasW;
   const H = CANVAS_H;
   ctx.clearRect(0, 0, W, H);
-  ctx.drawImage(assets.backgroundImg, 0, 0, W, H);
+  drawImageCover(ctx, assets.backgroundImg, W, H);
 
   const cx = W / 2;
-  const groundY = H - 56;
+  // Sits on the tabletop surface in the background art (~80% down).
+  const groundY = H * 0.80;
   const stage = getCactusStage(pumps);
 
   if (state === 'exploded') {
     const explosionImg = stage <= 2 ? assets.explosionSmall : assets.explosionBig;
-    drawImageAnchored(ctx, explosionImg, cx, groundY, 190);
+    // Burst is centred on the plant rather than resting on the table.
+    const burstW = stage <= 2 ? 210 : 260;
+    drawImageAnchored(ctx, explosionImg, cx, groundY + burstW * 0.42, burstW);
     return;
   }
 
@@ -563,7 +587,7 @@ function drawCactus(
     assets.cactusStage3,
     assets.cactusStage4,
   ];
-  drawImageAnchored(ctx, stageImages[stage], cx, groundY, 150);
+  drawImageAnchored(ctx, stageImages[stage], cx, groundY, 130);
 }
 
 

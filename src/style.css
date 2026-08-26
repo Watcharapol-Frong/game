@@ -363,16 +363,14 @@ body {
 /* Canvas area */
 .canvas-wrap {
   position: relative;
-  display: flex;
-  justify-content: center;
-  background: #C8E6F5;
+  display: block;
   overflow: hidden;
   border-radius: 0;
-  margin: 0 -1px;
 }
 
 #cactus-canvas {
   display: block;
+  width: 100%;
 }
 
 .canvas-overlay {
