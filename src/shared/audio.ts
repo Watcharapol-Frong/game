@@ -178,42 +178,42 @@ function noise(opts: {
 export function playPump(intensity = 0): void {
   // intensity 0..1 nudges the pitch up so later pumps feel more strained.
   const base = 320 + intensity * 260;
-  tone({ freq: base, toFreq: base * 1.9, type: 'triangle', duration: 0.12, peak: 0.16 });
-  noise({ duration: 0.09, peak: 0.05, filterFreq: 900, filterToFreq: 2600, type: 'bandpass' });
+  tone({ freq: base, toFreq: base * 1.9, type: 'triangle', duration: 0.12, peak: 0.30 });
+  noise({ duration: 0.09, peak: 0.10, filterFreq: 900, filterToFreq: 2600, type: 'bandpass' });
 }
 
 /** Game 1 bank: a two-note coin chime. */
 export function playBank(): void {
-  tone({ freq: 880, type: 'triangle', duration: 0.16, peak: 0.16 });
-  tone({ freq: 1320, type: 'triangle', duration: 0.30, peak: 0.13, start: 0.08 });
+  tone({ freq: 880, type: 'triangle', duration: 0.16, peak: 0.30 });
+  tone({ freq: 1320, type: 'triangle', duration: 0.30, peak: 0.24, start: 0.08 });
 }
 
 /** Game 1 burst: noise blast plus a falling thud. */
 export function playBurst(): void {
-  noise({ duration: 0.45, peak: 0.30, filterFreq: 3200, filterToFreq: 220 });
-  tone({ freq: 180, toFreq: 45, type: 'sawtooth', duration: 0.45, peak: 0.20 });
+  noise({ duration: 0.45, peak: 0.50, filterFreq: 3200, filterToFreq: 220 });
+  tone({ freq: 180, toFreq: 45, type: 'sawtooth', duration: 0.45, peak: 0.36 });
 }
 
 /** Positive feedback (Game 2 correct, Game 3 correct). */
 export function playCorrect(): void {
-  tone({ freq: 660, type: 'sine', duration: 0.12, peak: 0.13 });
-  tone({ freq: 990, type: 'sine', duration: 0.22, peak: 0.11, start: 0.07 });
+  tone({ freq: 660, type: 'sine', duration: 0.12, peak: 0.26 });
+  tone({ freq: 990, type: 'sine', duration: 0.22, peak: 0.22, start: 0.07 });
 }
 
 /** Negative feedback (Game 2 incorrect, Game 3 incorrect/timeout). */
 export function playIncorrect(): void {
-  tone({ freq: 240, toFreq: 150, type: 'square', duration: 0.22, peak: 0.09 });
+  tone({ freq: 240, toFreq: 150, type: 'square', duration: 0.22, peak: 0.18 });
 }
 
 /** Neutral UI tick, e.g. advancing a Game 4 round. */
 export function playClick(): void {
-  tone({ freq: 520, type: 'sine', duration: 0.07, peak: 0.08 });
+  tone({ freq: 520, type: 'sine', duration: 0.07, peak: 0.16 });
 }
 
 /** Session-complete flourish. */
 export function playComplete(): void {
   [523, 659, 784, 1047].forEach((f, i) => {
-    tone({ freq: f, type: 'triangle', duration: 0.42, peak: 0.12, start: i * 0.1 });
+    tone({ freq: f, type: 'triangle', duration: 0.42, peak: 0.24, start: i * 0.1 });
   });
 }
 
@@ -229,7 +229,7 @@ export function startAmbient(): void {
 
   ambientGain = c.createGain();
   ambientGain.gain.value = 0.0001;
-  ambientGain.gain.setTargetAtTime(0.055, c.currentTime, 1.5);
+  ambientGain.gain.setTargetAtTime(0.10, c.currentTime, 1.5);
 
   const filter = c.createBiquadFilter();
   filter.type = 'lowpass';
