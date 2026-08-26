@@ -398,39 +398,6 @@ body {
   color: var(--gold);
 }
 
-/* Pump progress bar */
-.pump-progress-wrap {
-  padding: 12px 20px 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.pump-progress-track {
-  height: 6px;
-  background: var(--surface-2);
-  border-radius: 99px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.pump-progress-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.2s ease, background 0.3s ease;
-  background: var(--accent);
-}
-
-.pump-progress-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-}
-
-.pump-progress-labels span {
-  font-size: 10px;
-  color: var(--text-faint);
-  letter-spacing: 0.05em;
-}
-
 /* Pump info */
 .pump-info {
   display: flex;
@@ -483,7 +450,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .canvas-wrap.shaking { animation: none; }
   .screen { animation: none; }
-  .pump-progress-fill { transition: none; }
 }
 
 /* ============================================================

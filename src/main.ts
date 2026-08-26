@@ -56,7 +56,13 @@ const assetsReady: Promise<void> = (async () => {
     : never;
 })();
 
-const MAX_PUMPS = 32;
+// NOTE: the UI deliberately does not know or show the burst ceiling. Exposing
+// it (as a "max 32" label or a bar filling toward it) hands players the optimal
+// stopping point — for a uniform 1..32 threshold that is exactly 16 pumps, i.e.
+// a half-full bar — which would make adjustedAveragePumps measure whether they
+// spotted that cue rather than their actual risk appetite. The cactus art
+// (growing, then sweating at the top stage) carries the risk feedback instead,
+// matching how the original BART leaves the ceiling to be learned by experience.
 const TOTAL_TRIALS = 20;
 const CANVAS_W = 300; // fallback only; the live width is measured from the card
 const CANVAS_H = 380;
@@ -265,17 +271,6 @@ function renderTrialScreen() {
         <div class="canvas-overlay" id="canvas-overlay" aria-live="assertive" aria-atomic="true"></div>
       </div>
 
-      <div class="pump-progress-wrap">
-        <div class="pump-progress-track">
-          <div class="pump-progress-fill" id="progress-fill" style="width:0%"></div>
-        </div>
-        <div class="pump-progress-labels">
-          <span>0</span>
-          <span>Pumps (max 32)</span>
-          <span>32</span>
-        </div>
-      </div>
-
       <div class="pump-info">
         <img src="${assets!.iconWater.src}" class="hud-inline-icon" alt="Pumps" />
         <span class="pump-count-val" id="pump-count">0</span>
@@ -386,20 +381,6 @@ function updateHUD() {
 
   const unbankedEl = qs<HTMLElement>('#unbanked-pts');
   if (unbankedEl) unbankedEl.textContent = String(currentPumps);
-
-  const fillEl = qs<HTMLElement>('#progress-fill');
-  if (fillEl) {
-    const pct = (currentPumps / MAX_PUMPS) * 100;
-    fillEl.style.width = `${pct}%`;
-    // Color shifts green → amber → red as risk increases
-    if (pct < 45) {
-      fillEl.style.background = 'var(--accent)';
-    } else if (pct < 72) {
-      fillEl.style.background = 'var(--gold)';
-    } else {
-      fillEl.style.background = 'var(--danger)';
-    }
-  }
 }
 
 function setButtonsEnabled(pump: boolean, bank: boolean) {
