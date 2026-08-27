@@ -27,52 +27,15 @@ img, canvas { display: block; max-width: 100%; }
   --font-body:     'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
-/* ---- Dark tokens (system) ---- */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg:           #111A12;
-    --surface:      #1C2A1D;
-    --surface-2:    #243326;
-    --text:         #E2EFE3;
-    --text-muted:   #8DB89A;
-    --text-faint:   #5C8465;
-    --accent:       #52B788;
-    --accent-hover: #6BCFA1;
-    --accent-faint: #1A3D26;
-    --danger:       #FF7849;
-    --danger-faint: #3A1A0E;
-    --gold:         #F4A261;
-    --gold-faint:   #3A2410;
-    --border:       rgba(82, 183, 136, 0.18);
-    --shadow-sm:    0 1px 4px rgba(0,0,0,0.25);
-    --shadow-md:    0 3px 16px rgba(0,0,0,0.40);
-  }
-}
-
-/* ---- Dark tokens (explicit toggle) ---- */
-:root[data-theme="dark"] {
-  --bg:           #111A12;
-  --surface:      #1C2A1D;
-  --surface-2:    #243326;
-  --text:         #E2EFE3;
-  --text-muted:   #8DB89A;
-  --text-faint:   #5C8465;
-  --accent:       #52B788;
-  --accent-hover: #6BCFA1;
-  --accent-faint: #1A3D26;
-  --danger:       #FF7849;
-  --danger-faint: #3A1A0E;
-  --gold:         #F4A261;
-  --gold-faint:   #3A2410;
-  --border:       rgba(82, 183, 136, 0.18);
-  --shadow-sm:    0 1px 4px rgba(0,0,0,0.25);
-  --shadow-md:    0 3px 16px rgba(0,0,0,0.40);
-}
+/* Dark mode intentionally omitted: this session always renders in the light
+   theme regardless of the device's OS/browser color-scheme setting, so every
+   participant sees identical visuals during testing. */
 
 /* ---- Base ---- */
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  color-scheme: light;
 }
 
 body {
