@@ -477,8 +477,6 @@ function renderGameOver() {
   playComplete();
   savedPayload = engine.getPayload();
   const m = savedPayload.summaryMetrics;
-  const adapt = m.postExplosionAdaptationDelta;
-  const adaptStr = adapt === 0 ? '0' : (adapt > 0 ? `+${adapt}` : String(adapt));
 
   const app = document.getElementById('app')!;
   app.innerHTML = `
@@ -493,29 +491,13 @@ function renderGameOver() {
             <span class="metric-label">Total Points Earned</span>
             <span class="metric-value gold">${m.totalPointsEarned}</span>
           </div>
-          <div class="metric-row">
-            <span class="metric-label">Cacti Survived</span>
-            <span class="metric-value">${m.unexplodedTrialsCount} / ${m.totalTrials}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Cacti Burst</span>
-            <span class="metric-value danger">${m.explodedTrialsCount}</span>
-          </div>
           <div class="metric-row highlight">
             <span class="metric-label">How Much Risk You Took</span>
             <span class="metric-value">${m.adjustedAveragePumps}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Average Waters per Cactus</span>
-            <span class="metric-value">${m.overallAveragePumps}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">How Fast You Decided</span>
-            <span class="metric-value">${m.averagePumpLatencyMs} ms</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Care After a Pop</span>
-            <span class="metric-value">${adaptStr} pumps</span>
+            <span class="metric-label">Cacti Burst</span>
+            <span class="metric-value danger">${m.explodedTrialsCount} / ${m.totalTrials}</span>
           </div>
         </div>
 
@@ -894,28 +876,8 @@ function renderGame2GameOver() {
             <span class="metric-value">${m.totalCorrect} / ${m.totalTrials}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Total Errors</span>
-            <span class="metric-value danger">${m.totalErrors}</span>
-          </div>
-          <div class="metric-row">
             <span class="metric-label">Stuck on the Old Rule</span>
             <span class="metric-value danger">${m.perseverativeErrors} &nbsp;<small style="font-weight:400;color:var(--text-faint)">${peRate}</small></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Other Mistakes</span>
-            <span class="metric-value">${m.nonPerseverativeErrors}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Cards to First Success</span>
-            <span class="metric-value">${m.trialsToFirstCategory}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Slipped Up After Getting It</span>
-            <span class="metric-value">${m.failureToMaintainSet}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">How Fast You Chose</span>
-            <span class="metric-value">${m.averageReactionTimeMs} ms</span>
           </div>
         </div>
 
@@ -1150,7 +1112,6 @@ function renderGame3GameOver() {
   savedGame3Payload = flankerEngine.getPayload();
   const m = savedGame3Payload.summaryMetrics;
   const fxStr = m.flankerEffectMs >= 0 ? `+${m.flankerEffectMs}` : String(m.flankerEffectMs);
-  const pesStr = m.postErrorSlowingMs >= 0 ? `+${m.postErrorSlowingMs}` : String(m.postErrorSlowingMs);
 
   const app = document.getElementById('app')!;
   app.innerHTML = `
@@ -1166,36 +1127,12 @@ function renderGame3GameOver() {
             <span class="metric-value gold">${m.totalCorrect} / ${m.totalTrials}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Accuracy — Easy Rounds</span>
-            <span class="metric-value">${(m.congruentAccuracy * 100).toFixed(0)}%</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Accuracy — Tricky Rounds</span>
-            <span class="metric-value">${(m.incongruentAccuracy * 100).toFixed(0)}%</span>
-          </div>
-          <div class="metric-row">
             <span class="metric-label">Distraction Cost</span>
             <span class="metric-value">${fxStr} ms</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Speed — Easy Rounds</span>
-            <span class="metric-value">${m.meanCongruentRtMs} ms</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Speed — Tricky Rounds</span>
-            <span class="metric-value">${m.meanIncongruentRtMs} ms</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Slower After a Mistake</span>
-            <span class="metric-value">${pesStr} ms</span>
-          </div>
-          <div class="metric-row">
             <span class="metric-label">Missed in Time</span>
             <span class="metric-value ${m.timeouts > 0 ? 'danger' : ''}">${m.timeouts} &nbsp;<small style="font-weight:400;color:var(--text-faint)">(${(m.timeoutRate * 100).toFixed(0)}%)</small></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Rushed Answers</span>
-            <span class="metric-value ${m.impulsiveErrorCount > 0 ? 'danger' : ''}">${m.impulsiveErrorCount}</span>
           </div>
         </div>
 
@@ -1462,7 +1399,6 @@ function renderGame4GameOver() {
   savedGame4Payload = pggEngine.getPayload();
   const m = savedGame4Payload.summaryMetrics;
   const slopeStr = m.cooperationDecaySlope >= 0 ? `+${m.cooperationDecaySlope}` : String(m.cooperationDecaySlope);
-  const sensStr = m.freeRiderSensitivity >= 0 ? `+${m.freeRiderSensitivity}` : String(m.freeRiderSensitivity);
 
   const app = document.getElementById('app')!;
   app.innerHTML = `
@@ -1478,24 +1414,12 @@ function renderGame4GameOver() {
             <span class="metric-value gold">${m.finalCumulativePayoff} pts</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">First Round Contribution</span>
-            <span class="metric-value">${m.initialContribution} / 10</span>
-          </div>
-          <div class="metric-row">
             <span class="metric-label">Average Contribution</span>
             <span class="metric-value">${m.averageContribution} / 10</span>
           </div>
           <div class="metric-row">
             <span class="metric-label">Giving Trend Over Time</span>
             <span class="metric-value">${slopeStr}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Reaction to Selfish Neighbors</span>
-            <span class="metric-value">${sensStr}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">How Fast You Chose</span>
-            <span class="metric-value">${m.meanDecisionLatencyMs} ms</span>
           </div>
         </div>
 
