@@ -229,23 +229,23 @@ function renderIntro() {
         <div class="game-select-row">
           <button id="game1-btn" class="btn btn-primary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🌵</span>
-            <span style="text-align:left"><strong>Game 1 — Jane's Cactus Care</strong><br><small style="font-weight:400;opacity:.8">How much risk do you take?</small></span>
+            <span style="text-align:left"><strong>Game 1: Jane's Cactus Care</strong><br><small style="font-weight:400;opacity:.8">How much risk do you take?</small></span>
           </button>
           <button id="game2-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🍡</span>
-            <span style="text-align:left"><strong>Game 2 — Poom's Wagashi Sorting</strong><br><small style="font-weight:400;opacity:.8">Adapt when the rules change</small></span>
+            <span style="text-align:left"><strong>Game 2: Poom's Wagashi Sorting</strong><br><small style="font-weight:400;opacity:.8">Adapt when the rules change</small></span>
           </button>
           <button id="game3-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🎯</span>
-            <span style="text-align:left"><strong>Game 3 — Meen's Focus Mode</strong><br><small style="font-weight:400;opacity:.8">Stay focused, ignore the noise</small></span>
+            <span style="text-align:left"><strong>Game 3: Meen's Focus Mode</strong><br><small style="font-weight:400;opacity:.8">Stay focused, ignore the noise</small></span>
           </button>
           <button id="game4-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🤝</span>
-            <span style="text-align:left"><strong>Game 4 — Kong's Neighborhood Sprint</strong><br><small style="font-weight:400;opacity:.8">Share and work with others</small></span>
+            <span style="text-align:left"><strong>Game 4: Kong's Neighborhood Sprint</strong><br><small style="font-weight:400;opacity:.8">Share and work with others</small></span>
           </button>
         </div>
         ${combinedResultsButtonHTML()}
-        <p class="session-note">No right or wrong answers — just play naturally</p>
+        <p class="session-note">No right or wrong answers, just play naturally</p>
       </div>
     </div>
   `;
@@ -275,11 +275,11 @@ function renderGame1Intro() {
         <div class="intro-rules">
           <div class="rule"><span class="rule-num">1</span>Pump to grow your cactus and earn points.</div>
           <div class="rule"><span class="rule-num">2</span>Bank at any time to lock in what you've earned.</div>
-          <div class="rule"><span class="rule-num">3</span>Over-pump and the cactus bursts — those points are gone.</div>
+          <div class="rule"><span class="rule-num">3</span>Over-pump and the cactus bursts, and those points are gone.</div>
         </div>
         <button id="begin-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
-        <p class="session-note">20 cacti &nbsp;·&nbsp; no time limit</p>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
+        <p class="session-note">20 cacti, no time limit</p>
       </div>
     </div>
   `;
@@ -502,10 +502,10 @@ function renderGameOver() {
         </div>
 
         <div class="gameover-actions">
-          <button id="next-game-btn" class="btn btn-primary">Next Game — Poom's Wagashi Sorting →</button>
+          <button id="next-game-btn" class="btn btn-primary">Next: Poom's Wagashi Sorting</button>
           ${combinedResultsButtonHTML()}
           <button id="replay-btn" class="btn btn-secondary">Play Again</button>
-          <button id="home-btn" class="btn btn-secondary">← Game Select</button>
+          <button id="home-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
     </div>
@@ -725,23 +725,23 @@ function renderGame2Intro() {
       <div class="intro-inner">
         <div class="logo-mark">🍡</div>
         <h1 class="game-title">Poom's Wagashi Sorting</h1>
-        <p class="game-subtitle">Watch the rules — they might change</p>
+        <p class="game-subtitle">Watch the rules, they might change</p>
         <div class="persona-card">
           <p>ภูมิ (Poom) left his office job to become a matcha barista. Every day he arranges
-          wagashi sweets on paper trays — but the customer's sorting rule changes without warning.</p>
+          wagashi sweets on paper trays, but the customer's sorting rule changes without warning.</p>
           <p><em>Can you adapt when the rules shift under you?</em></p>
         </div>
         <div class="intro-rules">
           <div class="rule"><span class="rule-num">1</span>A wagashi card appears. Sort it onto one of the 3 reference trays.</div>
-          <div class="rule"><span class="rule-num">2</span>You'll be told Correct or Incorrect — but never why.</div>
+          <div class="rule"><span class="rule-num">2</span>You'll be told Correct or Incorrect, but never why.</div>
           <div class="rule"><span class="rule-num">3</span>After 6 correct in a row the sorting rule changes silently.</div>
         </div>
         <div style="display:flex;gap:10px;justify-content:center;padding:4px 0">
           ${platesHTML}
         </div>
         <button id="begin-wcst-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
-        <p class="session-note">40 cards &nbsp;·&nbsp; no time limit</p>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
+        <p class="session-note">40 cards, no time limit</p>
       </div>
     </div>
   `;
@@ -882,10 +882,10 @@ function renderGame2GameOver() {
         </div>
 
         <div class="gameover-actions">
-          <button id="next-game-btn" class="btn btn-primary">Next Game — Meen's Focus Mode →</button>
+          <button id="next-game-btn" class="btn btn-primary">Next: Meen's Focus Mode</button>
           ${combinedResultsButtonHTML()}
           <button id="replay-wcst-btn" class="btn btn-secondary">Play Again</button>
-          <button id="home-wcst-btn" class="btn btn-secondary">← Game Select</button>
+          <button id="home-wcst-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
     </div>
@@ -944,14 +944,14 @@ function renderGame3Intro() {
         <p class="game-subtitle">Block out the noise</p>
         <div class="persona-card">
           <p>มีน (Meen) is studying for her university entrance exam. Her phone
-          never stops buzzing — every notification pulls her attention away from
+          never stops buzzing, and every notification pulls her attention away from
           the lesson summary she needs to read.</p>
           <p><em>Can you focus on what matters and ignore the noise?</em></p>
         </div>
         <div class="intro-rules">
-          <div class="rule"><span class="rule-num">1</span>Five cards appear — focus on the <strong>center card</strong>.</div>
-          <div class="rule"><span class="rule-num">2</span>Tap the left/right button (or press <kbd>←</kbd> / <kbd>→</kbd>) to match its arrow.</div>
-          <div class="rule"><span class="rule-num">3</span>The surrounding notifications may point a different way — ignore them.</div>
+          <div class="rule"><span class="rule-num">1</span>Five cards appear, focus on the <strong>center card</strong>.</div>
+          <div class="rule"><span class="rule-num">2</span>Tap the left or right button (or press <kbd>←</kbd> or <kbd>→</kbd>) to match its arrow.</div>
+          <div class="rule"><span class="rule-num">3</span>The surrounding notifications may point a different way, ignore them.</div>
         </div>
         <div class="flanker-demo-row">
           <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
@@ -961,8 +961,8 @@ function renderGame3Intro() {
           <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
         </div>
         <button id="begin-flanker-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
-        <p class="session-note">48 rounds &nbsp;·&nbsp; react quickly</p>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
+        <p class="session-note">48 rounds, react quickly</p>
       </div>
     </div>
   `;
@@ -1003,7 +1003,7 @@ function renderGame3Shell() {
       </div>
       <div class="flanker-stimulus-area">
         <div id="flanker-stimulus-slot"></div>
-        <div class="flanker-key-hint">Tap a side, or press <kbd>←</kbd> / <kbd>→</kbd></div>
+        <div class="flanker-key-hint">Tap a side, or press <kbd>←</kbd> or <kbd>→</kbd></div>
         <div class="flanker-feedback" id="flanker-feedback" aria-live="assertive"></div>
       </div>
       <div class="flanker-response-row">
@@ -1137,10 +1137,10 @@ function renderGame3GameOver() {
         </div>
 
         <div class="gameover-actions">
-          <button id="next-game-btn" class="btn btn-primary">Next Game — Kong's Neighborhood Sprint →</button>
+          <button id="next-game-btn" class="btn btn-primary">Next: Kong's Neighborhood Sprint</button>
           ${combinedResultsButtonHTML()}
           <button id="replay-flanker-btn" class="btn btn-secondary">Play Again</button>
-          <button id="home-flanker-btn" class="btn btn-secondary">← Game Select</button>
+          <button id="home-flanker-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
     </div>
@@ -1186,18 +1186,18 @@ function renderGame4Intro() {
         <p class="game-subtitle">Play nice with your neighbors</p>
         <div class="persona-card">
           <p>พี่ก้อง (Kong) organizes a shared community fund with 3 neighbors every
-          sprint. Everyone chips in what they choose — the pooled amount grows, then
+          sprint. Everyone chips in what they choose, the pooled amount grows, then
           gets split evenly among the whole group.</p>
           <p><em>How much do you contribute when others might not?</em></p>
         </div>
         <div class="intro-rules">
           <div class="rule"><span class="rule-num">1</span>Each round you and 3 teammates get 10 coins.</div>
-          <div class="rule"><span class="rule-num">2</span>Choose how much to put into the shared pool — the rest you keep.</div>
+          <div class="rule"><span class="rule-num">2</span>Choose how much to put into the shared pool, the rest you keep.</div>
           <div class="rule"><span class="rule-num">3</span>The pool is multiplied ×1.6 and split evenly among all 4 players.</div>
         </div>
         <button id="begin-pgg-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
-        <p class="session-note">8 rounds &nbsp;·&nbsp; 10 s per round</p>
+        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
+        <p class="session-note">8 rounds, 10 seconds each</p>
       </div>
     </div>
   `;
@@ -1376,7 +1376,7 @@ function renderGame4RoundResult(roundLog: PggRoundLog) {
           <div class="pgg-pool-row highlight gold"><span>Cumulative Payoff</span><span>${roundLog.userCumulativePayoff} pts</span></div>
         </div>
 
-        <button id="pgg-continue-btn" class="btn btn-primary">${isLastRound ? 'View Final Results' : 'Continue →'}</button>
+        <button id="pgg-continue-btn" class="btn btn-primary">${isLastRound ? 'View Final Results' : 'Continue'}</button>
       </div>
     </div>
   `;
@@ -1426,7 +1426,7 @@ function renderGame4GameOver() {
         <div class="gameover-actions">
           ${combinedResultsButtonHTML()}
           <button id="replay-pgg-btn" class="btn btn-secondary">Play Again</button>
-          <button id="home-pgg-btn" class="btn btn-secondary">← Game Select</button>
+          <button id="home-pgg-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
     </div>
@@ -1621,7 +1621,7 @@ function renderSessionSummary() {
         </div>
 
         <div class="gameover-actions">
-          <button id="home-summary-btn" class="btn btn-secondary">← Game Select</button>
+          <button id="home-summary-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
     </div>
