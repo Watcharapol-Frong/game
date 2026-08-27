@@ -170,15 +170,6 @@ function allGamesComplete(): boolean {
   return !!(savedPayload && savedGame2Payload && savedGame3Payload && savedGame4Payload);
 }
 
-function combinedResultsButtonHTML(): string {
-  if (!allGamesComplete()) return '';
-  return `<button id="view-summary-btn" class="btn btn-primary" style="background:var(--gold);box-shadow:0 2px 8px rgba(185,121,32,0.30)">📊 View Combined Results</button>`;
-}
-
-function attachCombinedResultsButton(): void {
-  qs<HTMLButtonElement>('#view-summary-btn')?.addEventListener('click', renderSessionSummary);
-}
-
 // ---- Audio ----
 
 // Browsers block audio until a real user gesture, so the first click anywhere
@@ -213,48 +204,7 @@ function syncMuteButton(): void {
 
 // ---- Entry ----
 renderMuteButton();
-renderIntro();
-
-// ============================================================
-// GAME SELECTOR
-// ============================================================
-function renderIntro() {
-  const app = document.getElementById('app')!;
-  app.innerHTML = `
-    <div class="screen intro-screen">
-      <div class="intro-inner">
-        <div class="logo-mark">🧠</div>
-        <h1 class="game-title">4 Little Games</h1>
-        <p class="game-subtitle">Pick a game to start playing</p>
-        <div class="game-select-row">
-          <button id="game1-btn" class="btn btn-primary" style="display:flex;align-items:center;gap:10px;justify-content:center">
-            <span style="font-size:22px">🌵</span>
-            <span style="text-align:left"><strong>Game 1: Jane's Cactus Care</strong><br><small style="font-weight:400;opacity:.8">How much risk do you take?</small></span>
-          </button>
-          <button id="game2-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
-            <span style="font-size:22px">🍡</span>
-            <span style="text-align:left"><strong>Game 2: Poom's Wagashi Sorting</strong><br><small style="font-weight:400;opacity:.8">Adapt when the rules change</small></span>
-          </button>
-          <button id="game3-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
-            <span style="font-size:22px">🎯</span>
-            <span style="text-align:left"><strong>Game 3: Meen's Focus Mode</strong><br><small style="font-weight:400;opacity:.8">Stay focused, ignore the noise</small></span>
-          </button>
-          <button id="game4-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
-            <span style="font-size:22px">🤝</span>
-            <span style="text-align:left"><strong>Game 4: Kong's Neighborhood Sprint</strong><br><small style="font-weight:400;opacity:.8">Share and work with others</small></span>
-          </button>
-        </div>
-        ${combinedResultsButtonHTML()}
-        <p class="session-note">No right or wrong answers, just play naturally</p>
-      </div>
-    </div>
-  `;
-  qs<HTMLButtonElement>('#game1-btn')!.addEventListener('click', renderGame1Intro);
-  qs<HTMLButtonElement>('#game2-btn')!.addEventListener('click', renderGame2Intro);
-  qs<HTMLButtonElement>('#game3-btn')!.addEventListener('click', renderGame3Intro);
-  qs<HTMLButtonElement>('#game4-btn')!.addEventListener('click', renderGame4Intro);
-  attachCombinedResultsButton();
-}
+renderGame1Intro();
 
 // ============================================================
 // GAME 1 — INTRO
@@ -278,13 +228,11 @@ function renderGame1Intro() {
           <div class="rule"><span class="rule-num">3</span>Over-pump and the cactus bursts, and those points are gone.</div>
         </div>
         <button id="begin-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
         <p class="session-note">20 cacti, no time limit</p>
       </div>
     </div>
   `;
   qs<HTMLButtonElement>('#begin-btn')!.addEventListener('click', startGame);
-  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
 }
 
 // ============================================================
@@ -476,43 +424,7 @@ function removeShake() {
 function renderGameOver() {
   playComplete();
   savedPayload = engine.getPayload();
-  const m = savedPayload.summaryMetrics;
-
-  const app = document.getElementById('app')!;
-  app.innerHTML = `
-    <div class="screen gameover-screen">
-      <div class="gameover-inner">
-        <div class="logo-mark">🌵</div>
-        <h2 class="gameover-title">All Done!</h2>
-        <p class="gameover-sub">Here's how Jane tended her 20 cacti.</p>
-
-        <div class="metrics-table">
-          <div class="metric-row">
-            <span class="metric-label">Total Points Earned</span>
-            <span class="metric-value gold">${m.totalPointsEarned}</span>
-          </div>
-          <div class="metric-row highlight">
-            <span class="metric-label">How Much Risk You Took</span>
-            <span class="metric-value">${m.adjustedAveragePumps}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Cacti Burst</span>
-            <span class="metric-value danger">${m.explodedTrialsCount} / ${m.totalTrials}</span>
-          </div>
-        </div>
-
-        <div class="gameover-actions">
-          <button id="next-game-btn" class="btn btn-primary">Next: Poom's Wagashi Sorting</button>
-          ${combinedResultsButtonHTML()}
-          <button id="home-btn" class="btn btn-secondary">Game Select</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame2Intro);
-  qs<HTMLButtonElement>('#home-btn')!.addEventListener('click', renderIntro);
-  attachCombinedResultsButton();
+  renderGame2Intro();
 }
 
 // ============================================================
@@ -738,13 +650,11 @@ function renderGame2Intro() {
           ${platesHTML}
         </div>
         <button id="begin-wcst-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
         <p class="session-note">40 cards, no time limit</p>
       </div>
     </div>
   `;
   qs<HTMLButtonElement>('#begin-wcst-btn')!.addEventListener('click', startGame2);
-  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
 }
 
 // ---- Start game 2 ----
@@ -853,47 +763,8 @@ function setGame2PlatesDisabled(disabled: boolean) {
 function renderGame2GameOver() {
   playComplete();
   savedGame2Payload = wcstEngine.getPayload();
-  const m = savedGame2Payload.summaryMetrics;
-  const peRate = m.totalErrors > 0 ? `${(m.perseverativeErrorRate * 100).toFixed(0)}%` : 'N/A';
-
-  const app = document.getElementById('app')!;
-  app.innerHTML = `
-    <div class="screen wcst-gameover-screen">
-      <div class="wcst-gameover-inner">
-        <div class="logo-mark">🍡</div>
-        <h2 class="gameover-title">All Done!</h2>
-        <p class="gameover-sub">Here's how Poom sorted his 40 wagashi.</p>
-
-        <div class="metrics-table">
-          <div class="metric-row highlight">
-            <span class="metric-label">Categories Completed</span>
-            <span class="metric-value gold">${m.categoriesCompleted} / 6</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Total Correct</span>
-            <span class="metric-value">${m.totalCorrect} / ${m.totalTrials}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Stuck on the Old Rule</span>
-            <span class="metric-value danger">${m.perseverativeErrors} &nbsp;<small style="font-weight:400;color:var(--text-faint)">${peRate}</small></span>
-          </div>
-        </div>
-
-        <div class="gameover-actions">
-          <button id="next-game-btn" class="btn btn-primary">Next: Meen's Focus Mode</button>
-          ${combinedResultsButtonHTML()}
-          <button id="home-wcst-btn" class="btn btn-secondary">Game Select</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', () => {
-    wcstCorrectCount = 0;
-    renderGame3Intro();
-  });
-  qs<HTMLButtonElement>('#home-wcst-btn')!.addEventListener('click', renderIntro);
-  attachCombinedResultsButton();
+  wcstCorrectCount = 0;
+  renderGame3Intro();
 }
 
 // ============================================================
@@ -954,13 +825,11 @@ function renderGame3Intro() {
           <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
         </div>
         <button id="begin-flanker-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
         <p class="session-note">48 rounds, react quickly</p>
       </div>
     </div>
   `;
   qs<HTMLButtonElement>('#begin-flanker-btn')!.addEventListener('click', startGame3);
-  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
 }
 
 // ---- Start game 3 ----
@@ -1103,44 +972,7 @@ function submitFlankerResponse(response: TargetDirection | 'timeout') {
 function renderGame3GameOver() {
   playComplete();
   savedGame3Payload = flankerEngine.getPayload();
-  const m = savedGame3Payload.summaryMetrics;
-  const fxStr = m.flankerEffectMs >= 0 ? `+${m.flankerEffectMs}` : String(m.flankerEffectMs);
-
-  const app = document.getElementById('app')!;
-  app.innerHTML = `
-    <div class="screen wcst-gameover-screen">
-      <div class="wcst-gameover-inner">
-        <div class="logo-mark">🎯</div>
-        <h2 class="gameover-title">All Done!</h2>
-        <p class="gameover-sub">Here's how Meen managed distractions.</p>
-
-        <div class="metrics-table">
-          <div class="metric-row highlight">
-            <span class="metric-label">Overall Accuracy</span>
-            <span class="metric-value gold">${m.totalCorrect} / ${m.totalTrials}</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Distraction Cost</span>
-            <span class="metric-value">${fxStr} ms</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Missed in Time</span>
-            <span class="metric-value ${m.timeouts > 0 ? 'danger' : ''}">${m.timeouts} &nbsp;<small style="font-weight:400;color:var(--text-faint)">(${(m.timeoutRate * 100).toFixed(0)}%)</small></span>
-          </div>
-        </div>
-
-        <div class="gameover-actions">
-          <button id="next-game-btn" class="btn btn-primary">Next: Kong's Neighborhood Sprint</button>
-          ${combinedResultsButtonHTML()}
-          <button id="home-flanker-btn" class="btn btn-secondary">Game Select</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame4Intro);
-  qs<HTMLButtonElement>('#home-flanker-btn')!.addEventListener('click', renderIntro);
-  attachCombinedResultsButton();
+  renderGame4Intro();
 }
 
 // ============================================================
@@ -1187,13 +1019,11 @@ function renderGame4Intro() {
           <div class="rule"><span class="rule-num">3</span>The pool is multiplied ×1.6 and split evenly among all 4 players.</div>
         </div>
         <button id="begin-pgg-btn" class="btn btn-primary">Start</button>
-        <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">Back</button>
         <p class="session-note">8 rounds, 10 seconds each</p>
       </div>
     </div>
   `;
   qs<HTMLButtonElement>('#begin-pgg-btn')!.addEventListener('click', startGame4);
-  qs<HTMLButtonElement>('#back-btn')!.addEventListener('click', renderIntro);
 }
 
 // ---- Start game 4 ----
@@ -1388,42 +1218,7 @@ function renderGame4RoundResult(roundLog: PggRoundLog) {
 function renderGame4GameOver() {
   playComplete();
   savedGame4Payload = pggEngine.getPayload();
-  const m = savedGame4Payload.summaryMetrics;
-  const slopeStr = m.cooperationDecaySlope >= 0 ? `+${m.cooperationDecaySlope}` : String(m.cooperationDecaySlope);
-
-  const app = document.getElementById('app')!;
-  app.innerHTML = `
-    <div class="screen wcst-gameover-screen">
-      <div class="wcst-gameover-inner">
-        <div class="logo-mark">🤝</div>
-        <h2 class="gameover-title">All Done!</h2>
-        <p class="gameover-sub">Here's how Kong contributed to the neighborhood fund.</p>
-
-        <div class="metrics-table">
-          <div class="metric-row highlight">
-            <span class="metric-label">Total Points Earned</span>
-            <span class="metric-value gold">${m.finalCumulativePayoff} pts</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Average Contribution</span>
-            <span class="metric-value">${m.averageContribution} / 10</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-label">Giving Trend Over Time</span>
-            <span class="metric-value">${slopeStr}</span>
-          </div>
-        </div>
-
-        <div class="gameover-actions">
-          ${combinedResultsButtonHTML()}
-          <button id="home-pgg-btn" class="btn btn-secondary">Game Select</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  qs<HTMLButtonElement>('#home-pgg-btn')!.addEventListener('click', renderIntro);
-  attachCombinedResultsButton();
+  renderSessionSummary();
 }
 
 // ============================================================
@@ -1605,10 +1400,6 @@ function renderSessionSummary() {
             <span class="metric-value">${radar.axes.resilienceAndAdaptability}</span>
           </div>
         </div>
-
-        <div class="gameover-actions">
-          <button id="home-summary-btn" class="btn btn-secondary">Game Select</button>
-        </div>
       </div>
     </div>
   `;
@@ -1623,6 +1414,4 @@ function renderSessionSummary() {
   const ctx = canvas.getContext('2d')!;
   ctx.scale(dpr, dpr);
   drawRadarChart(ctx, size, radar);
-
-  qs<HTMLButtonElement>('#home-summary-btn')!.addEventListener('click', renderIntro);
 }
