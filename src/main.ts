@@ -59,10 +59,10 @@ import pggSliderMinusSrc from './assets/game4/slider-minus.webp';
 // Fixed aiId->role mapping lives in the engine; this only decides the display
 // name/portrait shown for each role, so it's safe to keep separate from the
 // exported payload's underlying "AI 1"/"AI 2"/"AI 3" data.
-const PGG_ROLE_INFO: Record<string, { displayName: string; avatar: string; tagline: string }> = {
-  'Stable Cooperator': { displayName: 'ป้ามาลี', avatar: pggAvatarMaleeSrc, tagline: 'Always generous' },
-  'Conditional Cooperator': { displayName: 'พี่เอก', avatar: pggAvatarEkSrc, tagline: 'Follows the crowd' },
-  'Persistent Free-rider': { displayName: 'บอย', avatar: pggAvatarBoySrc, tagline: 'Rarely shares' },
+const PGG_ROLE_INFO: Record<string, { displayName: string; avatar: string }> = {
+  'Stable Cooperator': { displayName: 'ป้ามาลี', avatar: pggAvatarMaleeSrc },
+  'Conditional Cooperator': { displayName: 'พี่เอก', avatar: pggAvatarEkSrc },
+  'Persistent Free-rider': { displayName: 'บอย', avatar: pggAvatarBoySrc },
 };
 
 const wagashiShapeSrc: Record<WagashiShape, string> = {
@@ -1412,7 +1412,6 @@ function renderGame4RoundResult(roundLog: PggRoundLog) {
     <div class="pgg-ai-card">
       <img class="pgg-ai-avatar" src="${info.avatar}" alt="">
       <span class="pgg-ai-name">${info.displayName}</span>
-      <span class="pgg-ai-role">${info.tagline}</span>
       <span class="pgg-ai-coins">${ai.contribution} <small>coins</small></span>
     </div>
   `;
