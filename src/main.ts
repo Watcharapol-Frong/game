@@ -37,6 +37,13 @@ import wcstIconCorrectSrc from './assets/game2/icon-correct.webp';
 import wcstIconIncorrectSrc from './assets/game2/icon-incorrect.webp';
 import wcstBackgroundSrc from './assets/game2/background.webp';
 
+import flankerBackgroundSrc from './assets/game3/background.webp';
+import flankerArrowLeftSrc from './assets/game3/arrow-left.webp';
+import flankerArrowRightSrc from './assets/game3/arrow-right.webp';
+import flankerFixationSrc from './assets/game3/fixation-cross.webp';
+import flankerBtnLeftSrc from './assets/game3/btn-left.webp';
+import flankerBtnRightSrc from './assets/game3/btn-right.webp';
+
 const wagashiShapeSrc: Record<WagashiShape, string> = {
   flower: wagashiFlowerSrc,
   leaf: wagashiLeafSrc,
@@ -46,6 +53,11 @@ const wagashiTraySrc: Record<'green' | 'blue' | 'red', string> = {
   green: trayGreenSrc,
   blue: trayBlueSrc,
   red: trayRedSrc,
+};
+
+const flankerArrowSrc: Record<TargetDirection, string> = {
+  left: flankerArrowLeftSrc,
+  right: flankerArrowRightSrc,
 };
 
 const assetSources = {
@@ -993,8 +1005,8 @@ async function exportGame2JSON() {
 
 const FLANKER_TOTAL = 48;
 
-function flankerArrowHTML(direction: TargetDirection): string {
-  return direction === 'left' ? '←' : '→';
+function flankerArrowImgHTML(direction: TargetDirection): string {
+  return `<img class="flanker-arrow-img" src="${flankerArrowSrc[direction]}" alt="${direction === 'left' ? '←' : '→'}">`;
 }
 
 function flankerCardRowHTML(trial: FlankerTrial): string {
@@ -1006,9 +1018,15 @@ function flankerCardRowHTML(trial: FlankerTrial): string {
       const isCenter = i === 2;
       const cls = isCenter ? 'flanker-card center-card' : 'flanker-card notification';
       const label = isCenter ? 'Target' : 'Notif';
-      return `<div class="${cls}" aria-label="${label}" data-dir="${dir}"><span class="flanker-arrow">${flankerArrowHTML(dir)}</span></div>`;
+      return `<div class="${cls}" aria-label="${label}" data-dir="${dir}">${flankerArrowImgHTML(dir)}</div>`;
     })
     .join('');
+}
+
+/** Fixation cross shown briefly before each trial's arrows, to anchor gaze at a
+ *  consistent point so the stimulus's onset location is never a surprise. */
+function flankerFixationHTML(): string {
+  return `<div class="flanker-card-row flanker-fixation-row"><img class="flanker-fixation-img" src="${flankerFixationSrc}" alt="Get ready"></div>`;
 }
 
 // ---- Game 3 intro screen ----
@@ -1032,11 +1050,11 @@ function renderGame3Intro() {
           <div class="rule"><span class="rule-num">3</span>The surrounding notifications may point a different way — ignore them.</div>
         </div>
         <div class="flanker-demo-row">
-          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
-          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
-          <div class="flanker-card center-card"><span class="flanker-arrow">←</span></div>
-          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
-          <div class="flanker-card notification"><span class="flanker-arrow">→</span></div>
+          <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
+          <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
+          <div class="flanker-card center-card">${flankerArrowImgHTML('left')}</div>
+          <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
+          <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
         </div>
         <button id="begin-flanker-btn" class="btn btn-primary">Begin Session</button>
         <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
@@ -1058,32 +1076,37 @@ function startGame3() {
   startGame3Trial(firstTrial);
 }
 
-// ---- Render a trial ----
-function renderGame3Trial(trial: FlankerTrial) {
+// A 250-450ms cross before each trial anchors gaze at a fixed point, so the
+// arrows' onset location never surprises the participant mid-scan.
+const FLANKER_FIXATION_MS = 350;
+
+// ---- Render a trial (fixation cross first, then the arrow row) ----
+function renderGame3Trial(trial: FlankerTrial, phase: 'fixation' | 'stimulus' = 'stimulus') {
   const app = document.getElementById('app')!;
   const trialIdx = flankerEngine.getCurrentTrialIndex() + 1;
+  const stimulusHTML = phase === 'fixation'
+    ? flankerFixationHTML()
+    : `<div class="flanker-card-row" id="flanker-card-row">${flankerCardRowHTML(trial)}</div>`;
   app.innerHTML = `
-    <div class="screen flanker-trial-screen" id="flanker-screen">
-      <div class="hud">
+    <div class="screen flanker-trial-screen" id="flanker-screen" style="background-image:url('${flankerBackgroundSrc}')">
+      <div class="hud hud-overlay">
         <div class="hud-trial">
           <span class="hud-label">Trial</span>
           <span class="hud-value" id="flanker-trial-num">${trialIdx} <span class="hud-of">of ${FLANKER_TOTAL}</span></span>
         </div>
         <div class="hud-score">
           <span class="hud-label">Condition</span>
-          <span class="hud-value" id="flanker-condition" style="font-size:13px;text-transform:capitalize;color:var(--text-faint)">${trial.condition}</span>
+          <span class="hud-value" id="flanker-condition" style="font-size:13px;text-transform:capitalize;color:var(--text-faint)">${phase === 'stimulus' ? trial.condition : ''}</span>
         </div>
       </div>
       <div class="flanker-stimulus-area">
-        <div class="flanker-card-row" id="flanker-card-row">
-          ${flankerCardRowHTML(trial)}
-        </div>
+        ${stimulusHTML}
         <div class="flanker-key-hint">Tap a side, or press <kbd>←</kbd> / <kbd>→</kbd></div>
         <div class="flanker-feedback" id="flanker-feedback" aria-live="assertive"></div>
       </div>
       <div class="flanker-response-row">
-        <button id="flanker-left-btn" class="btn flanker-btn" aria-label="Respond left">←</button>
-        <button id="flanker-right-btn" class="btn flanker-btn" aria-label="Respond right">→</button>
+        <button id="flanker-left-btn" class="btn-img-action" aria-label="Respond left"><img src="${flankerBtnLeftSrc}" alt="←"></button>
+        <button id="flanker-right-btn" class="btn-img-action" aria-label="Respond right"><img src="${flankerBtnRightSrc}" alt="→"></button>
       </div>
     </div>
   `;
@@ -1091,20 +1114,23 @@ function renderGame3Trial(trial: FlankerTrial) {
   qs<HTMLButtonElement>('#flanker-right-btn')!.addEventListener('click', () => handleFlankerInput('right'));
 }
 
-// ---- Start a trial (render + set timeout + listen keys) ----
+// ---- Start a trial: fixation cross, then the arrow row (+ timeout + keys) ----
 function startGame3Trial(trial: FlankerTrial) {
-  renderGame3Trial(trial);
-  // Stay busy until the card has actually painted, so a response landing in the gap
-  // between render and paint can't be scored against a stale RT clock.
+  renderGame3Trial(trial, 'fixation');
   flankerBusy = true;
-  requestAnimationFrame(() => {
-    flankerEngine.showStimulus();
-    flankerBusy = false;
-    document.addEventListener('keydown', handleFlankerKey);
-    flankerTimeoutHandle = setTimeout(() => {
-      submitFlankerResponse('timeout');
-    }, 1200);
-  });
+  setTimeout(() => {
+    renderGame3Trial(trial, 'stimulus');
+    // Stay busy until the card has actually painted, so a response landing in the gap
+    // between render and paint can't be scored against a stale RT clock.
+    requestAnimationFrame(() => {
+      flankerEngine.showStimulus();
+      flankerBusy = false;
+      document.addEventListener('keydown', handleFlankerKey);
+      flankerTimeoutHandle = setTimeout(() => {
+        submitFlankerResponse('timeout');
+      }, 1200);
+    });
+  }, FLANKER_FIXATION_MS);
 }
 
 function handleFlankerInput(response: TargetDirection) {

@@ -721,10 +721,15 @@ body {
    ================================================================ */
 
 /* Trial screen */
+/* The scene photo is the trial screen's own background, same treatment as
+   Game 2 - the HUD and arrows float directly over it. */
 .flanker-trial-screen {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background-color: var(--surface-2);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border);
@@ -736,31 +741,30 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: 32px 20px 28px;
+  padding: 28px 20px;
 }
 
 /* Card row */
 .flanker-card-row,
-.flanker-demo-row {
+.flanker-demo-row,
+.flanker-fixation-row {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  min-height: 88px;
 }
 
 .flanker-demo-row {
   padding: 4px 0;
+  min-height: auto;
 }
 
-/* Individual flanker card */
+/* Individual flanker card - bare arrow floating on the scene, no box chrome */
 .flanker-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-sm);
-  border: 1.5px solid var(--border);
-  background: var(--surface-2);
   width: 60px;
   height: 72px;
   transition: none;
@@ -770,27 +774,44 @@ body {
 .flanker-card.center-card {
   width: 76px;
   height: 88px;
-  border: 2.5px solid var(--accent);
-  background: var(--accent-faint);
-  box-shadow: var(--shadow-md);
 }
 
 .flanker-card.notification {
   width: 56px;
   height: 66px;
-  opacity: 0.75;
+  opacity: 0.55;
 }
 
-.flanker-arrow {
-  font-size: 30px;
-  line-height: 1;
-  color: var(--text);
-  font-family: var(--font-body);
+/* The intro screen's demo row isn't over a photo, so it keeps a card-box look
+   to visually separate the target from the notifications. */
+.flanker-demo-row .flanker-card {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  opacity: 0.85;
+}
+.flanker-demo-row .flanker-card.center-card {
+  border: 2.5px solid var(--accent);
+  background: var(--accent-faint);
+  box-shadow: var(--shadow-md);
+  opacity: 1;
 }
 
-.flanker-card.center-card .flanker-arrow {
-  font-size: 36px;
-  color: var(--accent);
+.flanker-arrow-img {
+  width: 34px;
+  height: auto;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.35));
+}
+
+.flanker-card.center-card .flanker-arrow-img {
+  width: 44px;
+}
+
+.flanker-fixation-img {
+  width: 40px;
+  height: auto;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.35));
 }
 
 /* On-screen response buttons (mobile-friendly) */
@@ -800,34 +821,12 @@ body {
   padding: 0 20px 20px;
 }
 
-.flanker-btn {
-  flex: 1;
-  min-height: 64px;
-  font-size: 28px;
-  font-weight: 600;
-  background: var(--surface-2);
-  color: var(--text);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  transition: background .15s, border-color .15s, transform .1s;
-}
-
-.flanker-btn:hover:not(:disabled) {
-  background: var(--accent-faint);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.flanker-btn:active:not(:disabled) {
-  transform: scale(.95);
-  background: var(--accent-faint);
-}
-
 /* Keyboard hint */
 .flanker-key-hint {
   font-size: 12px;
   color: var(--text-faint);
   letter-spacing: 0.06em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.4), 0 0 8px rgba(255,255,255,.35);
 }
 
 .flanker-key-hint kbd {
@@ -848,6 +847,7 @@ body {
   font-size: 26px;
   font-weight: 400;
   text-align: center;
+  text-shadow: 0 1px 3px rgba(0,0,0,.4), 0 0 8px rgba(255,255,255,.35);
 }
 
 .flanker-feedback.feedback-correct { color: var(--accent); }
