@@ -504,7 +504,6 @@ function renderGameOver() {
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next: Poom's Wagashi Sorting</button>
           ${combinedResultsButtonHTML()}
-          <button id="replay-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
@@ -512,7 +511,6 @@ function renderGameOver() {
   `;
 
   qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame2Intro);
-  qs<HTMLButtonElement>('#replay-btn')!.addEventListener('click', renderGame1Intro);
   qs<HTMLButtonElement>('#home-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
 }
@@ -884,7 +882,6 @@ function renderGame2GameOver() {
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next: Meen's Focus Mode</button>
           ${combinedResultsButtonHTML()}
-          <button id="replay-wcst-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-wcst-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
@@ -894,10 +891,6 @@ function renderGame2GameOver() {
   qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', () => {
     wcstCorrectCount = 0;
     renderGame3Intro();
-  });
-  qs<HTMLButtonElement>('#replay-wcst-btn')!.addEventListener('click', () => {
-    wcstCorrectCount = 0;
-    renderGame2Intro();
   });
   qs<HTMLButtonElement>('#home-wcst-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
@@ -1139,7 +1132,6 @@ function renderGame3GameOver() {
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next: Kong's Neighborhood Sprint</button>
           ${combinedResultsButtonHTML()}
-          <button id="replay-flanker-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-flanker-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
@@ -1147,7 +1139,6 @@ function renderGame3GameOver() {
   `;
 
   qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame4Intro);
-  qs<HTMLButtonElement>('#replay-flanker-btn')!.addEventListener('click', renderGame3Intro);
   qs<HTMLButtonElement>('#home-flanker-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
 }
@@ -1425,17 +1416,12 @@ function renderGame4GameOver() {
 
         <div class="gameover-actions">
           ${combinedResultsButtonHTML()}
-          <button id="replay-pgg-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-pgg-btn" class="btn btn-secondary">Game Select</button>
         </div>
       </div>
     </div>
   `;
 
-  qs<HTMLButtonElement>('#replay-pgg-btn')!.addEventListener('click', () => {
-    pggLastCumulative = 0;
-    renderGame4Intro();
-  });
   qs<HTMLButtonElement>('#home-pgg-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
 }
