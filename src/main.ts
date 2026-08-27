@@ -761,7 +761,7 @@ function renderGame2Intro() {
   const app = document.getElementById('app')!;
   const eng = new WcstGameEngine('_preview');
   const plates = eng.targetPlates;
-  const platesHTML = plates.map((p, i) => wagashiCardHTML(p, 'target-plate', i)).join('');
+  const platesHTML = plates.map((p, i) => wagashiCardHTML(p, 'target-plate intro-preview-plate', i)).join('');
 
   app.innerHTML = `
     <div class="screen intro-screen">

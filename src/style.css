@@ -94,6 +94,10 @@ body {
   text-align: center;
   text-wrap: balance;
   line-height: 1.15;
+  /* Reserve the top-right corner (the fixed mute button lives there) so a
+     long title can never run underneath it, on any viewport height. */
+  max-width: calc(100% - 52px);
+  margin-inline: auto;
 }
 
 .game-subtitle {
@@ -644,6 +648,18 @@ body {
 .wagashi-card[aria-disabled="true"] {
   pointer-events: none;
   opacity: .55;
+}
+
+/* The intro screen's 3 plates are a non-interactive preview - shrink them
+   so 3-across never overflows the card, and drop the interactive affordances
+   since nothing is clickable here. */
+.wagashi-card.intro-preview-plate {
+  width: 90px;
+  cursor: default;
+}
+.wagashi-card.intro-preview-plate:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .wagashi-card.presented {
