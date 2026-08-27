@@ -43,6 +43,7 @@ import flankerArrowRightSrc from './assets/game3/arrow-right.webp';
 import flankerFixationSrc from './assets/game3/fixation-cross.webp';
 import flankerBtnLeftSrc from './assets/game3/btn-left.webp';
 import flankerBtnRightSrc from './assets/game3/btn-right.webp';
+import flankerTimeoutSrc from './assets/game3/timeout.webp';
 
 const wagashiShapeSrc: Record<WagashiShape, string> = {
   flower: wagashiFlowerSrc,
@@ -1072,6 +1073,7 @@ function startGame3() {
   flankerEngine.initSequence();
   flankerBusy = false;
   flankerTimeoutHandle = null;
+  renderGame3Shell();
   const firstTrial = flankerEngine.startGame();
   startGame3Trial(firstTrial);
 }
@@ -1080,27 +1082,28 @@ function startGame3() {
 // arrows' onset location never surprises the participant mid-scan.
 const FLANKER_FIXATION_MS = 350;
 
-// ---- Render a trial (fixation cross first, then the arrow row) ----
-function renderGame3Trial(trial: FlankerTrial, phase: 'fixation' | 'stimulus' = 'stimulus') {
+// ---- Build the trial screen once per session ----
+// Everything that doesn't change between trials (background, HUD chrome,
+// response buttons) is only ever written to the DOM here. Re-writing the whole
+// screen on every trial - including the background image - was causing a
+// visible flash each time; now only the small bits that actually change
+// (trial number, condition label, the stimulus itself) get updated in place.
+function renderGame3Shell() {
   const app = document.getElementById('app')!;
-  const trialIdx = flankerEngine.getCurrentTrialIndex() + 1;
-  const stimulusHTML = phase === 'fixation'
-    ? flankerFixationHTML()
-    : `<div class="flanker-card-row" id="flanker-card-row">${flankerCardRowHTML(trial)}</div>`;
   app.innerHTML = `
     <div class="screen flanker-trial-screen" id="flanker-screen" style="background-image:url('${flankerBackgroundSrc}')">
       <div class="hud hud-overlay">
         <div class="hud-trial">
           <span class="hud-label">Trial</span>
-          <span class="hud-value" id="flanker-trial-num">${trialIdx} <span class="hud-of">of ${FLANKER_TOTAL}</span></span>
+          <span class="hud-value" id="flanker-trial-num">1 <span class="hud-of">of ${FLANKER_TOTAL}</span></span>
         </div>
         <div class="hud-score">
           <span class="hud-label">Condition</span>
-          <span class="hud-value" id="flanker-condition" style="font-size:13px;text-transform:capitalize;color:var(--text-faint)">${phase === 'stimulus' ? trial.condition : ''}</span>
+          <span class="hud-value" id="flanker-condition" style="font-size:13px;text-transform:capitalize;color:var(--text-faint)"></span>
         </div>
       </div>
       <div class="flanker-stimulus-area">
-        ${stimulusHTML}
+        <div id="flanker-stimulus-slot"></div>
         <div class="flanker-key-hint">Tap a side, or press <kbd>←</kbd> / <kbd>→</kbd></div>
         <div class="flanker-feedback" id="flanker-feedback" aria-live="assertive"></div>
       </div>
@@ -1114,12 +1117,34 @@ function renderGame3Trial(trial: FlankerTrial, phase: 'fixation' | 'stimulus' = 
   qs<HTMLButtonElement>('#flanker-right-btn')!.addEventListener('click', () => handleFlankerInput('right'));
 }
 
+// ---- Update the parts of the shell that change for this trial/phase ----
+function updateGame3Stimulus(trial: FlankerTrial, phase: 'fixation' | 'stimulus') {
+  const trialIdx = flankerEngine.getCurrentTrialIndex() + 1;
+  const trialNumEl = qs<HTMLElement>('#flanker-trial-num');
+  if (trialNumEl) trialNumEl.innerHTML = `${trialIdx} <span class="hud-of">of ${FLANKER_TOTAL}</span>`;
+
+  const conditionEl = qs<HTMLElement>('#flanker-condition');
+  if (conditionEl) conditionEl.textContent = phase === 'stimulus' ? trial.condition : '';
+
+  const slot = qs<HTMLElement>('#flanker-stimulus-slot');
+  if (slot) {
+    slot.innerHTML = phase === 'fixation'
+      ? flankerFixationHTML()
+      : `<div class="flanker-card-row" id="flanker-card-row">${flankerCardRowHTML(trial)}</div>`;
+  }
+}
+
 // ---- Start a trial: fixation cross, then the arrow row (+ timeout + keys) ----
 function startGame3Trial(trial: FlankerTrial) {
-  renderGame3Trial(trial, 'fixation');
+  const screen = qs<HTMLElement>('#flanker-screen');
+  screen?.classList.remove('glow-correct', 'shake-wrong');
+  const fb = qs<HTMLElement>('#flanker-feedback');
+  if (fb) { fb.innerHTML = ''; fb.className = 'flanker-feedback'; }
+
+  updateGame3Stimulus(trial, 'fixation');
   flankerBusy = true;
   setTimeout(() => {
-    renderGame3Trial(trial, 'stimulus');
+    updateGame3Stimulus(trial, 'stimulus');
     // Stay busy until the card has actually painted, so a response landing in the gap
     // between render and paint can't be scored against a stale RT clock.
     requestAnimationFrame(() => {
@@ -1170,7 +1195,7 @@ function submitFlankerResponse(response: TargetDirection | 'timeout') {
       fb.className = 'flanker-feedback feedback-correct';
     } else {
       screen.classList.add('shake-wrong');
-      fb.textContent = response === 'timeout' ? '⏱ Time!' : '✗';
+      fb.innerHTML = response === 'timeout' ? `<img class="flanker-timeout-icon" src="${flankerTimeoutSrc}" alt="Time out">` : '✗';
       fb.className = 'flanker-feedback feedback-wrong';
     }
   }

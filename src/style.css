@@ -853,6 +853,13 @@ body {
 .flanker-feedback.feedback-correct { color: var(--accent); }
 .flanker-feedback.feedback-wrong   { color: var(--danger); }
 
+.flanker-timeout-icon {
+  width: 44px;
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.3));
+}
+
 /* Correct glow animation */
 @keyframes glowCorrect {
   0%   { box-shadow: 0 0 0 0 rgba(82, 183, 136, 0.5); }
