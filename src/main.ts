@@ -59,10 +59,10 @@ import pggSliderMinusSrc from './assets/game4/slider-minus.webp';
 // Fixed aiId->role mapping lives in the engine; this only decides the display
 // name/portrait shown for each role, so it's safe to keep separate from the
 // exported payload's underlying "AI 1"/"AI 2"/"AI 3" data.
-const PGG_ROLE_INFO: Record<string, { displayName: string; avatar: string }> = {
-  'Stable Cooperator': { displayName: 'ป้ามาลี', avatar: pggAvatarMaleeSrc },
-  'Conditional Cooperator': { displayName: 'พี่เอก', avatar: pggAvatarEkSrc },
-  'Persistent Free-rider': { displayName: 'บอย', avatar: pggAvatarBoySrc },
+const PGG_ROLE_INFO: Record<string, { displayName: string; avatar: string; tagline: string }> = {
+  'Stable Cooperator': { displayName: 'ป้ามาลี', avatar: pggAvatarMaleeSrc, tagline: 'Always generous' },
+  'Conditional Cooperator': { displayName: 'พี่เอก', avatar: pggAvatarEkSrc, tagline: 'Follows the crowd' },
+  'Persistent Free-rider': { displayName: 'บอย', avatar: pggAvatarBoySrc, tagline: 'Rarely shares' },
 };
 
 const wagashiShapeSrc: Record<WagashiShape, string> = {
@@ -224,28 +224,28 @@ function renderIntro() {
     <div class="screen intro-screen">
       <div class="intro-inner">
         <div class="logo-mark">🧠</div>
-        <h1 class="game-title">Psychometric Session</h1>
-        <p class="game-subtitle">Select a game to begin</p>
+        <h1 class="game-title">4 Little Games</h1>
+        <p class="game-subtitle">Pick a game to start playing</p>
         <div class="game-select-row">
           <button id="game1-btn" class="btn btn-primary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🌵</span>
-            <span style="text-align:left"><strong>Game 1 — Jane's Cactus Care</strong><br><small style="font-weight:400;opacity:.8">Risk tolerance · BART</small></span>
+            <span style="text-align:left"><strong>Game 1 — Jane's Cactus Care</strong><br><small style="font-weight:400;opacity:.8">How much risk do you take?</small></span>
           </button>
           <button id="game2-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🍡</span>
-            <span style="text-align:left"><strong>Game 2 — Poom's Wagashi Sorting</strong><br><small style="font-weight:400;opacity:.8">Cognitive flexibility · WCST</small></span>
+            <span style="text-align:left"><strong>Game 2 — Poom's Wagashi Sorting</strong><br><small style="font-weight:400;opacity:.8">Adapt when the rules change</small></span>
           </button>
           <button id="game3-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🎯</span>
-            <span style="text-align:left"><strong>Game 3 — Meen's Focus Mode</strong><br><small style="font-weight:400;opacity:.8">Selective attention · Flanker</small></span>
+            <span style="text-align:left"><strong>Game 3 — Meen's Focus Mode</strong><br><small style="font-weight:400;opacity:.8">Stay focused, ignore the noise</small></span>
           </button>
           <button id="game4-btn" class="btn btn-secondary" style="display:flex;align-items:center;gap:10px;justify-content:center">
             <span style="font-size:22px">🤝</span>
-            <span style="text-align:left"><strong>Game 4 — Kong's Neighborhood Sprint</strong><br><small style="font-weight:400;opacity:.8">Prosociality · Public Goods Game</small></span>
+            <span style="text-align:left"><strong>Game 4 — Kong's Neighborhood Sprint</strong><br><small style="font-weight:400;opacity:.8">Share and work with others</small></span>
           </button>
         </div>
         ${combinedResultsButtonHTML()}
-        <p class="session-note">Results export as a JSON payload after each session</p>
+        <p class="session-note">No right or wrong answers — just play naturally</p>
       </div>
     </div>
   `;
@@ -266,7 +266,7 @@ function renderGame1Intro() {
       <div class="intro-inner">
         <div class="logo-mark">🌵</div>
         <h1 class="game-title">Jane's Cactus Care</h1>
-        <p class="game-subtitle">A Psychometric Session · BART</p>
+        <p class="game-subtitle">Take it slow, or go for it?</p>
         <div class="persona-card">
           <p>Jane traded her corporate spreadsheets for cactus soil. Now she runs a small plant
           shop, making gut-feel decisions every day: water more or hold back?</p>
@@ -277,7 +277,7 @@ function renderGame1Intro() {
           <div class="rule"><span class="rule-num">2</span>Bank at any time to lock in what you've earned.</div>
           <div class="rule"><span class="rule-num">3</span>Over-pump and the cactus bursts — those points are gone.</div>
         </div>
-        <button id="begin-btn" class="btn btn-primary">Begin Session</button>
+        <button id="begin-btn" class="btn btn-primary">Start</button>
         <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
         <p class="session-note">20 cacti &nbsp;·&nbsp; no time limit</p>
       </div>
@@ -485,7 +485,7 @@ function renderGameOver() {
     <div class="screen gameover-screen">
       <div class="gameover-inner">
         <div class="logo-mark">🌵</div>
-        <h2 class="gameover-title">Session Complete</h2>
+        <h2 class="gameover-title">All Done!</h2>
         <p class="gameover-sub">Here's how Jane tended her 20 cacti.</p>
 
         <div class="metrics-table">
@@ -502,19 +502,19 @@ function renderGameOver() {
             <span class="metric-value danger">${m.explodedTrialsCount}</span>
           </div>
           <div class="metric-row highlight">
-            <span class="metric-label">Risk Index <em>(adj. avg pumps)</em></span>
+            <span class="metric-label">How Much Risk You Took</span>
             <span class="metric-value">${m.adjustedAveragePumps}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Overall Avg Pumps</span>
+            <span class="metric-label">Average Waters per Cactus</span>
             <span class="metric-value">${m.overallAveragePumps}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Avg Pump Speed</span>
+            <span class="metric-label">How Fast You Decided</span>
             <span class="metric-value">${m.averagePumpLatencyMs} ms</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Post-Burst Adaptation</span>
+            <span class="metric-label">Care After a Pop</span>
             <span class="metric-value">${adaptStr} pumps</span>
           </div>
         </div>
@@ -743,7 +743,7 @@ function renderGame2Intro() {
       <div class="intro-inner">
         <div class="logo-mark">🍡</div>
         <h1 class="game-title">Poom's Wagashi Sorting</h1>
-        <p class="game-subtitle">A Psychometric Session · WCST</p>
+        <p class="game-subtitle">Watch the rules — they might change</p>
         <div class="persona-card">
           <p>ภูมิ (Poom) left his office job to become a matcha barista. Every day he arranges
           wagashi sweets on paper trays — but the customer's sorting rule changes without warning.</p>
@@ -757,7 +757,7 @@ function renderGame2Intro() {
         <div style="display:flex;gap:10px;justify-content:center;padding:4px 0">
           ${platesHTML}
         </div>
-        <button id="begin-wcst-btn" class="btn btn-primary">Begin Session</button>
+        <button id="begin-wcst-btn" class="btn btn-primary">Start</button>
         <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
         <p class="session-note">40 cards &nbsp;·&nbsp; no time limit</p>
       </div>
@@ -881,7 +881,7 @@ function renderGame2GameOver() {
     <div class="screen wcst-gameover-screen">
       <div class="wcst-gameover-inner">
         <div class="logo-mark">🍡</div>
-        <h2 class="gameover-title">Session Complete</h2>
+        <h2 class="gameover-title">All Done!</h2>
         <p class="gameover-sub">Here's how Poom sorted his 40 wagashi.</p>
 
         <div class="metrics-table">
@@ -898,23 +898,23 @@ function renderGame2GameOver() {
             <span class="metric-value danger">${m.totalErrors}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Perseverative Errors <em>(rigidity)</em></span>
+            <span class="metric-label">Stuck on the Old Rule</span>
             <span class="metric-value danger">${m.perseverativeErrors} &nbsp;<small style="font-weight:400;color:var(--text-faint)">${peRate}</small></span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Non-Perseverative Errors</span>
+            <span class="metric-label">Other Mistakes</span>
             <span class="metric-value">${m.nonPerseverativeErrors}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Trials to First Category</span>
+            <span class="metric-label">Cards to First Success</span>
             <span class="metric-value">${m.trialsToFirstCategory}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Failure to Maintain Set</span>
+            <span class="metric-label">Slipped Up After Getting It</span>
             <span class="metric-value">${m.failureToMaintainSet}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Avg Decision Time</span>
+            <span class="metric-label">How Fast You Chose</span>
             <span class="metric-value">${m.averageReactionTimeMs} ms</span>
           </div>
         </div>
@@ -979,7 +979,7 @@ function renderGame3Intro() {
       <div class="intro-inner">
         <div class="logo-mark">🎯</div>
         <h1 class="game-title">Meen's Focus Mode</h1>
-        <p class="game-subtitle">A Psychometric Session · Flanker Task</p>
+        <p class="game-subtitle">Block out the noise</p>
         <div class="persona-card">
           <p>มีน (Meen) is studying for her university entrance exam. Her phone
           never stops buzzing — every notification pulls her attention away from
@@ -998,9 +998,9 @@ function renderGame3Intro() {
           <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
           <div class="flanker-card notification">${flankerArrowImgHTML('right')}</div>
         </div>
-        <button id="begin-flanker-btn" class="btn btn-primary">Begin Session</button>
+        <button id="begin-flanker-btn" class="btn btn-primary">Start</button>
         <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
-        <p class="session-note">48 trials &nbsp;·&nbsp; 1.2 s per stimulus</p>
+        <p class="session-note">48 rounds &nbsp;·&nbsp; react quickly</p>
       </div>
     </div>
   `;
@@ -1035,12 +1035,8 @@ function renderGame3Shell() {
     <div class="screen flanker-trial-screen" id="flanker-screen" style="background-image:url('${flankerBackgroundSrc}')">
       <div class="hud hud-overlay">
         <div class="hud-trial">
-          <span class="hud-label">Trial</span>
+          <span class="hud-label">Round</span>
           <span class="hud-value" id="flanker-trial-num">1 <span class="hud-of">of ${FLANKER_TOTAL}</span></span>
-        </div>
-        <div class="hud-score">
-          <span class="hud-label">Condition</span>
-          <span class="hud-value" id="flanker-condition" style="font-size:13px;text-transform:capitalize;color:var(--text-faint)"></span>
         </div>
       </div>
       <div class="flanker-stimulus-area">
@@ -1063,9 +1059,6 @@ function updateGame3Stimulus(trial: FlankerTrial, phase: 'fixation' | 'stimulus'
   const trialIdx = flankerEngine.getCurrentTrialIndex() + 1;
   const trialNumEl = qs<HTMLElement>('#flanker-trial-num');
   if (trialNumEl) trialNumEl.innerHTML = `${trialIdx} <span class="hud-of">of ${FLANKER_TOTAL}</span>`;
-
-  const conditionEl = qs<HTMLElement>('#flanker-condition');
-  if (conditionEl) conditionEl.textContent = phase === 'stimulus' ? trial.condition : '';
 
   const slot = qs<HTMLElement>('#flanker-stimulus-slot');
   if (slot) {
@@ -1164,7 +1157,7 @@ function renderGame3GameOver() {
     <div class="screen wcst-gameover-screen">
       <div class="wcst-gameover-inner">
         <div class="logo-mark">🎯</div>
-        <h2 class="gameover-title">Session Complete</h2>
+        <h2 class="gameover-title">All Done!</h2>
         <p class="gameover-sub">Here's how Meen managed distractions.</p>
 
         <div class="metrics-table">
@@ -1173,35 +1166,35 @@ function renderGame3GameOver() {
             <span class="metric-value gold">${m.totalCorrect} / ${m.totalTrials}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Congruent Accuracy</span>
+            <span class="metric-label">Accuracy — Easy Rounds</span>
             <span class="metric-value">${(m.congruentAccuracy * 100).toFixed(0)}%</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Incongruent Accuracy</span>
+            <span class="metric-label">Accuracy — Tricky Rounds</span>
             <span class="metric-value">${(m.incongruentAccuracy * 100).toFixed(0)}%</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Flanker Effect <em>(RT cost)</em></span>
+            <span class="metric-label">Distraction Cost</span>
             <span class="metric-value">${fxStr} ms</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Congruent Avg RT</span>
+            <span class="metric-label">Speed — Easy Rounds</span>
             <span class="metric-value">${m.meanCongruentRtMs} ms</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Incongruent Avg RT</span>
+            <span class="metric-label">Speed — Tricky Rounds</span>
             <span class="metric-value">${m.meanIncongruentRtMs} ms</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Post-Error Slowing</span>
+            <span class="metric-label">Slower After a Mistake</span>
             <span class="metric-value">${pesStr} ms</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Timeouts</span>
+            <span class="metric-label">Missed in Time</span>
             <span class="metric-value ${m.timeouts > 0 ? 'danger' : ''}">${m.timeouts} &nbsp;<small style="font-weight:400;color:var(--text-faint)">(${(m.timeoutRate * 100).toFixed(0)}%)</small></span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Impulsive Errors <em>(&lt;200 ms)</em></span>
+            <span class="metric-label">Rushed Answers</span>
             <span class="metric-value ${m.impulsiveErrorCount > 0 ? 'danger' : ''}">${m.impulsiveErrorCount}</span>
           </div>
         </div>
@@ -1253,7 +1246,7 @@ function renderGame4Intro() {
       <div class="intro-inner">
         <div class="logo-mark">🤝</div>
         <h1 class="game-title">Kong's Neighborhood Sprint</h1>
-        <p class="game-subtitle">A Psychometric Session · Public Goods Game</p>
+        <p class="game-subtitle">Play nice with your neighbors</p>
         <div class="persona-card">
           <p>พี่ก้อง (Kong) organizes a shared community fund with 3 neighbors every
           sprint. Everyone chips in what they choose — the pooled amount grows, then
@@ -1265,7 +1258,7 @@ function renderGame4Intro() {
           <div class="rule"><span class="rule-num">2</span>Choose how much to put into the shared pool — the rest you keep.</div>
           <div class="rule"><span class="rule-num">3</span>The pool is multiplied ×1.6 and split evenly among all 4 players.</div>
         </div>
-        <button id="begin-pgg-btn" class="btn btn-primary">Begin Session</button>
+        <button id="begin-pgg-btn" class="btn btn-primary">Start</button>
         <button id="back-btn" class="btn btn-secondary" style="margin-top:-6px">← Back</button>
         <p class="session-note">8 rounds &nbsp;·&nbsp; 10 s per round</p>
       </div>
@@ -1419,7 +1412,7 @@ function renderGame4RoundResult(roundLog: PggRoundLog) {
     <div class="pgg-ai-card">
       <img class="pgg-ai-avatar" src="${info.avatar}" alt="">
       <span class="pgg-ai-name">${info.displayName}</span>
-      <span class="pgg-ai-role">${ai.role}</span>
+      <span class="pgg-ai-role">${info.tagline}</span>
       <span class="pgg-ai-coins">${ai.contribution} <small>coins</small></span>
     </div>
   `;
@@ -1477,16 +1470,16 @@ function renderGame4GameOver() {
     <div class="screen wcst-gameover-screen">
       <div class="wcst-gameover-inner">
         <div class="logo-mark">🤝</div>
-        <h2 class="gameover-title">Session Complete</h2>
+        <h2 class="gameover-title">All Done!</h2>
         <p class="gameover-sub">Here's how Kong contributed to the neighborhood fund.</p>
 
         <div class="metrics-table">
           <div class="metric-row highlight">
-            <span class="metric-label">Final Cumulative Payoff</span>
+            <span class="metric-label">Total Points Earned</span>
             <span class="metric-value gold">${m.finalCumulativePayoff} pts</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Initial Contribution <em>(baseline trust)</em></span>
+            <span class="metric-label">First Round Contribution</span>
             <span class="metric-value">${m.initialContribution} / 10</span>
           </div>
           <div class="metric-row">
@@ -1494,15 +1487,15 @@ function renderGame4GameOver() {
             <span class="metric-value">${m.averageContribution} / 10</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Cooperation Decay Slope</span>
+            <span class="metric-label">Giving Trend Over Time</span>
             <span class="metric-value">${slopeStr}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Free-rider Sensitivity</span>
+            <span class="metric-label">Reaction to Selfish Neighbors</span>
             <span class="metric-value">${sensStr}</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Avg Decision Time</span>
+            <span class="metric-label">How Fast You Chose</span>
             <span class="metric-value">${m.meanDecisionLatencyMs} ms</span>
           </div>
         </div>
@@ -1666,8 +1659,8 @@ function renderSessionSummary() {
     <div class="screen summary-screen">
       <div class="summary-inner">
         <div class="logo-mark">📊</div>
-        <h2 class="gameover-title">Combined Session Results</h2>
-        <p class="gameover-sub">6-axis psychometric profile synthesized across all 4 games.</p>
+        <h2 class="gameover-title">Your Full Results</h2>
+        <p class="gameover-sub">A snapshot of how you played across all 4 games.</p>
 
         <div class="summary-canvas-wrap">
           <canvas id="radar-canvas"></canvas>
@@ -1675,7 +1668,7 @@ function renderSessionSummary() {
 
         <div class="metrics-table">
           <div class="metric-row highlight">
-            <span class="metric-label">Overall Index</span>
+            <span class="metric-label">Overall Score</span>
             <span class="metric-value gold">${radar.overallIndex}</span>
           </div>
           <div class="metric-row">
