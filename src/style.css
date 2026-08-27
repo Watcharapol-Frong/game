@@ -511,12 +511,6 @@ body {
   width: 100%;
 }
 
-.export-note {
-  font-size: 11px;
-  color: var(--text-faint);
-  text-align: center;
-}
-
 /* ================================================================
    Game 2 — Wagashi Sorting (WCST)
    ================================================================ */

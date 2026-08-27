@@ -162,43 +162,6 @@ function genSessionId(): string {
   return `sess_ktp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-// Saves a JSON string as a downloadable file. Uses the Artifact runtime's
-// downloads capability when available (window.claude); otherwise falls back
-// to the standard browser download mechanism (Blob + <a download>), which is
-// what's needed on a normal web deployment (e.g. GitHub Pages) where
-// window.claude doesn't exist.
-async function triggerJSONDownload(filename: string, json: string): Promise<'downloaded' | 'cancelled' | 'failed'> {
-  // @ts-ignore — window.claude is injected by the Artifact runtime
-  const hasClaudeRuntime = typeof window.claude?.use === 'function';
-
-  if (hasClaudeRuntime) {
-    try {
-      // @ts-ignore
-      const dl = await window.claude.use('downloads');
-      if (!dl) return 'failed';
-      await dl.save({ filename, data: json });
-      return 'downloaded';
-    } catch (err: any) {
-      return err?.code === 'declined' ? 'cancelled' : 'failed';
-    }
-  }
-
-  try {
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    return 'downloaded';
-  } catch {
-    return 'failed';
-  }
-}
-
 // One shared session ID for every game played in this sitting, so a combined
 // summary can be attributed to a single session.
 const appSessionId = genSessionId();
@@ -559,38 +522,17 @@ function renderGameOver() {
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next Game — Poom's Wagashi Sorting →</button>
           ${combinedResultsButtonHTML()}
-          <button id="export-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-btn" class="btn btn-secondary">← Game Select</button>
         </div>
-        <p class="export-note">JSON payload conforms to Game1Payload (BART) schema.</p>
       </div>
     </div>
   `;
 
   qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame2Intro);
-  qs<HTMLButtonElement>('#export-btn')!.addEventListener('click', exportJSON);
   qs<HTMLButtonElement>('#replay-btn')!.addEventListener('click', renderGame1Intro);
   qs<HTMLButtonElement>('#home-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
-}
-
-async function exportJSON() {
-  if (!savedPayload) return;
-  const btn = qs<HTMLButtonElement>('#export-btn');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.textContent = 'Exporting…';
-
-  const reset = (label: string) => {
-    btn.textContent = label;
-    btn.style.opacity = '0.75';
-    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
-  };
-
-  const json = JSON.stringify(savedPayload, null, 2);
-  const result = await triggerJSONDownload(`${savedPayload.sessionId}.json`, json);
-  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -980,11 +922,9 @@ function renderGame2GameOver() {
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next Game — Meen's Focus Mode →</button>
           ${combinedResultsButtonHTML()}
-          <button id="export-wcst-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-wcst-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-wcst-btn" class="btn btn-secondary">← Game Select</button>
         </div>
-        <p class="export-note">JSON payload conforms to Game2Payload (WCST) schema.</p>
       </div>
     </div>
   `;
@@ -993,31 +933,12 @@ function renderGame2GameOver() {
     wcstCorrectCount = 0;
     renderGame3Intro();
   });
-  qs<HTMLButtonElement>('#export-wcst-btn')!.addEventListener('click', exportGame2JSON);
   qs<HTMLButtonElement>('#replay-wcst-btn')!.addEventListener('click', () => {
     wcstCorrectCount = 0;
     renderGame2Intro();
   });
   qs<HTMLButtonElement>('#home-wcst-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
-}
-
-async function exportGame2JSON() {
-  if (!savedGame2Payload) return;
-  const btn = qs<HTMLButtonElement>('#export-wcst-btn');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.textContent = 'Exporting…';
-
-  const reset = (label: string) => {
-    btn.textContent = label;
-    btn.style.opacity = '0.75';
-    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
-  };
-
-  const json = JSON.stringify(savedGame2Payload, null, 2);
-  const result = await triggerJSONDownload(`${savedGame2Payload.sessionId}.json`, json);
-  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -1288,38 +1209,17 @@ function renderGame3GameOver() {
         <div class="gameover-actions">
           <button id="next-game-btn" class="btn btn-primary">Next Game — Kong's Neighborhood Sprint →</button>
           ${combinedResultsButtonHTML()}
-          <button id="export-flanker-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-flanker-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-flanker-btn" class="btn btn-secondary">← Game Select</button>
         </div>
-        <p class="export-note">JSON payload conforms to Game3Payload (Flanker) schema.</p>
       </div>
     </div>
   `;
 
   qs<HTMLButtonElement>('#next-game-btn')!.addEventListener('click', renderGame4Intro);
-  qs<HTMLButtonElement>('#export-flanker-btn')!.addEventListener('click', exportGame3JSON);
   qs<HTMLButtonElement>('#replay-flanker-btn')!.addEventListener('click', renderGame3Intro);
   qs<HTMLButtonElement>('#home-flanker-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
-}
-
-async function exportGame3JSON() {
-  if (!savedGame3Payload) return;
-  const btn = qs<HTMLButtonElement>('#export-flanker-btn');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.textContent = 'Exporting…';
-
-  const reset = (label: string) => {
-    btn.textContent = label;
-    btn.style.opacity = '0.75';
-    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
-  };
-
-  const json = JSON.stringify(savedGame3Payload, null, 2);
-  const result = await triggerJSONDownload(`${savedGame3Payload.sessionId}.json`, json);
-  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -1609,40 +1509,19 @@ function renderGame4GameOver() {
 
         <div class="gameover-actions">
           ${combinedResultsButtonHTML()}
-          <button id="export-pgg-btn" class="btn btn-secondary">Export Payload (JSON)</button>
           <button id="replay-pgg-btn" class="btn btn-secondary">Play Again</button>
           <button id="home-pgg-btn" class="btn btn-secondary">← Game Select</button>
         </div>
-        <p class="export-note">JSON payload conforms to Game4Payload (PGG) schema.</p>
       </div>
     </div>
   `;
 
-  qs<HTMLButtonElement>('#export-pgg-btn')!.addEventListener('click', exportGame4JSON);
   qs<HTMLButtonElement>('#replay-pgg-btn')!.addEventListener('click', () => {
     pggLastCumulative = 0;
     renderGame4Intro();
   });
   qs<HTMLButtonElement>('#home-pgg-btn')!.addEventListener('click', renderIntro);
   attachCombinedResultsButton();
-}
-
-async function exportGame4JSON() {
-  if (!savedGame4Payload) return;
-  const btn = qs<HTMLButtonElement>('#export-pgg-btn');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.textContent = 'Exporting…';
-
-  const reset = (label: string) => {
-    btn.textContent = label;
-    btn.style.opacity = '0.75';
-    setTimeout(() => { btn.textContent = 'Export Payload (JSON)'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
-  };
-
-  const json = JSON.stringify(savedGame4Payload, null, 2);
-  const result = await triggerJSONDownload(`${savedGame4Payload.sessionId}.json`, json);
-  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
 
 // ============================================================
@@ -1826,10 +1705,8 @@ function renderSessionSummary() {
         </div>
 
         <div class="gameover-actions">
-          <button id="export-summary-btn" class="btn btn-primary">Download Combined JSON</button>
           <button id="home-summary-btn" class="btn btn-secondary">← Game Select</button>
         </div>
-        <p class="export-note">Includes all 4 raw payloads (with full trial logs) plus the computed radar profile.</p>
       </div>
     </div>
   `;
@@ -1845,33 +1722,5 @@ function renderSessionSummary() {
   ctx.scale(dpr, dpr);
   drawRadarChart(ctx, size, radar);
 
-  qs<HTMLButtonElement>('#export-summary-btn')!.addEventListener('click', () => exportCombinedJSON(radar));
   qs<HTMLButtonElement>('#home-summary-btn')!.addEventListener('click', renderIntro);
-}
-
-async function exportCombinedJSON(radar: RadarChartOutput) {
-  const btn = qs<HTMLButtonElement>('#export-summary-btn');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.textContent = 'Exporting…';
-
-  const reset = (label: string) => {
-    btn.textContent = label;
-    btn.style.opacity = '0.75';
-    setTimeout(() => { btn.textContent = 'Download Combined JSON'; btn.style.opacity = ''; btn.disabled = false; }, 2000);
-  };
-
-  const combined = {
-    sessionId: appSessionId,
-    generatedAt: new Date().toISOString(),
-    game1_bart: savedPayload,
-    game2_wcst: savedGame2Payload,
-    game3_flanker: savedGame3Payload,
-    game4_pgg: savedGame4Payload,
-    radarProfile: radar,
-  };
-
-  const json = JSON.stringify(combined, null, 2);
-  const result = await triggerJSONDownload(`${appSessionId}_combined_radar.json`, json);
-  reset(result === 'downloaded' ? 'Downloaded ✓' : result === 'cancelled' ? 'Cancelled' : 'Download failed');
 }
