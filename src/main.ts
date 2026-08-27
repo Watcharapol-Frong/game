@@ -1334,7 +1334,11 @@ let pggContribHistory: number[] = [];
 
 function pggBackgroundSrc(): string {
   if (pggContribHistory.length === 0) return pggBackgroundStartSrc;
-  const avg = pggContribHistory.reduce((a, b) => a + b, 0) / pggContribHistory.length;
+  // A lifetime average barely moves after a few rounds, so the scene would look
+  // frozen for most of an 8-round session. A window over the most recent rounds
+  // keeps it reacting to how the group has been behaving lately.
+  const recent = pggContribHistory.slice(-3);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
   const rate = avg / 10;
   if (rate >= 0.6) return pggBackgroundThrivingSrc;
   if (rate <= 0.3) return pggBackgroundDecliningSrc;
