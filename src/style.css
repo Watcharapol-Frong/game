@@ -893,21 +893,34 @@ body {
    Game 4 — Kong's Neighborhood Sprint (Public Goods Game)
    ================================================================ */
 
+/* The neighborhood scene is the screen's own background - same full-bleed
+   treatment as Games 2 and 3 - so the HUD and the round card float over it. */
 .pgg-trial-screen {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background-color: var(--surface-2);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border);
   overflow: hidden;
 }
 
-/* 10s countdown bar */
+/* 10s countdown bar + numeric readout */
+.pgg-countdown-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+}
+
 .pgg-countdown-track {
-  height: 5px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.5);
   overflow: hidden;
 }
 
@@ -917,12 +930,34 @@ body {
   transition: width 0.1s linear, background 0.3s ease;
 }
 
+.pgg-countdown-num {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-shadow: 0 1px 3px rgba(0,0,0,.35), 0 0 8px rgba(255,255,255,.4);
+  min-width: 24px;
+  text-align: right;
+}
+
 .pgg-round-body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 16px 20px 22px;
+}
+
+.pgg-round-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 18px;
-  padding: 26px 24px 24px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  padding: 22px 20px;
 }
 
 .pgg-endowment-note {
@@ -979,9 +1014,30 @@ body {
   color: var(--gold);
 }
 
+.pgg-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pgg-stepper-btn {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.pgg-stepper-btn img { width: 100%; height: 100%; display: block; }
+.pgg-stepper-btn:active { transform: scale(.9); }
+
 .pgg-slider {
   -webkit-appearance: none;
   appearance: none;
+  flex: 1;
+  min-width: 0;
   width: 100%;
   height: 8px;
   border-radius: 99px;
@@ -1014,7 +1070,12 @@ body {
 
 /* ---- Round result reveal ---- */
 .pgg-result-screen {
-  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface-2);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border);
@@ -1026,7 +1087,12 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: 26px 24px;
+  margin: 0 16px 16px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  padding: 22px 20px;
 }
 
 .pgg-result-label {
@@ -1035,6 +1101,9 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
+  text-align: center;
+  padding: 16px 16px 0;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35), 0 0 8px rgba(255,255,255,.4);
 }
 
 .pgg-result-label .danger {
@@ -1064,9 +1133,12 @@ body {
   border-color: var(--accent);
 }
 
-.pgg-ai-emoji {
-  font-size: 22px;
-  line-height: 1;
+.pgg-ai-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
 }
 
 .pgg-ai-name {
@@ -1126,6 +1198,37 @@ body {
 .pgg-pool-row.gold {
   background: var(--gold-faint);
   color: var(--gold);
+}
+
+/* Brief "you contributed N coins" toast, shown before the round summary */
+.pgg-contrib-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--text);
+  transform: translate(-50%, -50%) scale(.85);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.pgg-contrib-popup.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.pgg-contrib-popup-coin {
+  width: 28px;
+  height: 28px;
 }
 
 /* ================================================================

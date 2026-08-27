@@ -45,6 +45,26 @@ import flankerBtnLeftSrc from './assets/game3/btn-left.webp';
 import flankerBtnRightSrc from './assets/game3/btn-right.webp';
 import flankerTimeoutSrc from './assets/game3/timeout.webp';
 
+import pggBackgroundStartSrc from './assets/game4/background-start.webp';
+import pggBackgroundThrivingSrc from './assets/game4/background-thriving.webp';
+import pggBackgroundDecliningSrc from './assets/game4/background-declining.webp';
+import pggAvatarMaleeSrc from './assets/game4/avatar-malee.webp';
+import pggAvatarEkSrc from './assets/game4/avatar-ek.webp';
+import pggAvatarBoySrc from './assets/game4/avatar-boy.webp';
+import pggAvatarPlayerSrc from './assets/game4/avatar-player.webp';
+import pggCoinSrc from './assets/game4/coin.webp';
+import pggSliderPlusSrc from './assets/game4/slider-plus.webp';
+import pggSliderMinusSrc from './assets/game4/slider-minus.webp';
+
+// Fixed aiId->role mapping lives in the engine; this only decides the display
+// name/portrait shown for each role, so it's safe to keep separate from the
+// exported payload's underlying "AI 1"/"AI 2"/"AI 3" data.
+const PGG_ROLE_INFO: Record<string, { displayName: string; avatar: string }> = {
+  'Stable Cooperator': { displayName: 'ป้ามาลี', avatar: pggAvatarMaleeSrc },
+  'Conditional Cooperator': { displayName: 'พี่เอก', avatar: pggAvatarEkSrc },
+  'Persistent Free-rider': { displayName: 'บอย', avatar: pggAvatarBoySrc },
+};
+
 const wagashiShapeSrc: Record<WagashiShape, string> = {
   flower: wagashiFlowerSrc,
   leaf: wagashiLeafSrc,
@@ -1307,11 +1327,19 @@ async function exportGame3JSON() {
 // ============================================================
 
 const PGG_TOTAL_ROUNDS = 8;
-const PGG_ROLE_EMOJI: Record<string, string> = {
-  'Conditional Cooperator': '🤔',
-  'Stable Cooperator': '🌟',
-  'Persistent Free-rider': '😏',
-};
+
+// Average per-player contribution (0-10) recorded after each round, reset at
+// the start of every session. Drives which of the 3 neighborhood scenes shows.
+let pggContribHistory: number[] = [];
+
+function pggBackgroundSrc(): string {
+  if (pggContribHistory.length === 0) return pggBackgroundStartSrc;
+  const avg = pggContribHistory.reduce((a, b) => a + b, 0) / pggContribHistory.length;
+  const rate = avg / 10;
+  if (rate >= 0.6) return pggBackgroundThrivingSrc;
+  if (rate <= 0.3) return pggBackgroundDecliningSrc;
+  return pggBackgroundStartSrc;
+}
 
 // ---- Game 4 intro screen ----
 function renderGame4Intro() {
@@ -1347,6 +1375,7 @@ function renderGame4Intro() {
 function startGame4() {
   pggEngine = new KongNeighborhoodEngine(appSessionId);
   pggBusy = false;
+  pggContribHistory = [];
   const roundInfo = pggEngine.startRound();
   renderGame4Round(roundInfo);
 }
@@ -1356,8 +1385,8 @@ function renderGame4Round(roundInfo: { roundIndex: number; endowment: number; ti
   const app = document.getElementById('app')!;
 
   app.innerHTML = `
-    <div class="screen pgg-trial-screen">
-      <div class="hud">
+    <div class="screen pgg-trial-screen" style="background-image:url('${pggBackgroundSrc()}')">
+      <div class="hud hud-overlay">
         <div class="hud-trial">
           <span class="hud-label">Round</span>
           <span class="hud-value">${roundInfo.roundIndex} <span class="hud-of">of ${PGG_TOTAL_ROUNDS}</span></span>
@@ -1368,28 +1397,37 @@ function renderGame4Round(roundInfo: { roundIndex: number; endowment: number; ti
         </div>
       </div>
 
-      <div class="pgg-countdown-track">
-        <div class="pgg-countdown-fill" id="pgg-countdown-fill" style="width:100%"></div>
+      <div class="pgg-countdown-wrap">
+        <div class="pgg-countdown-track">
+          <div class="pgg-countdown-fill" id="pgg-countdown-fill" style="width:100%"></div>
+        </div>
+        <span class="pgg-countdown-num" id="pgg-countdown-num">10s</span>
       </div>
 
       <div class="pgg-round-body">
-        <p class="pgg-endowment-note">You have <strong>${roundInfo.endowment} coins</strong> this round. How much goes into the shared pool?</p>
+        <div class="pgg-round-card">
+          <p class="pgg-endowment-note">You have <strong>${roundInfo.endowment} coins</strong> this round. How much goes into the shared pool?</p>
 
-        <div class="pgg-slider-wrap">
-          <div class="pgg-slider-readout">
-            <div class="pgg-readout-block">
-              <span class="pgg-readout-label">Contribute</span>
-              <span class="pgg-readout-val" id="pgg-contrib-val">5</span>
+          <div class="pgg-slider-wrap">
+            <div class="pgg-slider-readout">
+              <div class="pgg-readout-block">
+                <span class="pgg-readout-label">Contribute</span>
+                <span class="pgg-readout-val" id="pgg-contrib-val">5</span>
+              </div>
+              <div class="pgg-readout-block right">
+                <span class="pgg-readout-label">Keep</span>
+                <span class="pgg-readout-val gold" id="pgg-keep-val">5</span>
+              </div>
             </div>
-            <div class="pgg-readout-block right">
-              <span class="pgg-readout-label">Keep</span>
-              <span class="pgg-readout-val gold" id="pgg-keep-val">5</span>
+            <div class="pgg-slider-row">
+              <button type="button" class="pgg-stepper-btn" id="pgg-minus-btn" aria-label="Decrease"><img src="${pggSliderMinusSrc}" alt="−"></button>
+              <input type="range" min="0" max="10" step="1" value="5" id="pgg-slider" class="pgg-slider" />
+              <button type="button" class="pgg-stepper-btn" id="pgg-plus-btn" aria-label="Increase"><img src="${pggSliderPlusSrc}" alt="+"></button>
             </div>
           </div>
-          <input type="range" min="0" max="10" step="1" value="5" id="pgg-slider" class="pgg-slider" />
-        </div>
 
-        <button id="pgg-confirm-btn" class="btn btn-primary">Confirm Contribution</button>
+          <button id="pgg-confirm-btn" class="btn btn-primary">Confirm Contribution</button>
+        </div>
       </div>
     </div>
   `;
@@ -1397,10 +1435,19 @@ function renderGame4Round(roundInfo: { roundIndex: number; endowment: number; ti
   const slider = qs<HTMLInputElement>('#pgg-slider')!;
   const contribEl = qs<HTMLElement>('#pgg-contrib-val')!;
   const keepEl = qs<HTMLElement>('#pgg-keep-val')!;
-  slider.addEventListener('input', () => {
-    const v = Number(slider.value);
+  const updateReadout = (v: number) => {
     contribEl.textContent = String(v);
     keepEl.textContent = String(10 - v);
+  };
+  slider.addEventListener('input', () => updateReadout(Number(slider.value)));
+
+  qs<HTMLButtonElement>('#pgg-minus-btn')!.addEventListener('click', () => {
+    slider.value = String(Math.max(0, Number(slider.value) - 1));
+    updateReadout(Number(slider.value));
+  });
+  qs<HTMLButtonElement>('#pgg-plus-btn')!.addEventListener('click', () => {
+    slider.value = String(Math.min(10, Number(slider.value) + 1));
+    updateReadout(Number(slider.value));
   });
 
   qs<HTMLButtonElement>('#pgg-confirm-btn')!.addEventListener('click', () => {
@@ -1410,11 +1457,14 @@ function renderGame4Round(roundInfo: { roundIndex: number; endowment: number; ti
   // ---- 10s countdown ----
   const startTs = Date.now();
   const fillEl = qs<HTMLElement>('#pgg-countdown-fill')!;
+  const numEl = qs<HTMLElement>('#pgg-countdown-num')!;
   pggCountdownInterval = setInterval(() => {
     const elapsed = Date.now() - startTs;
+    const remainingMs = Math.max(0, 10000 - elapsed);
     const pct = Math.max(0, 100 * (1 - elapsed / 10000));
     fillEl.style.width = `${pct}%`;
     fillEl.style.background = pct < 25 ? 'var(--danger)' : pct < 55 ? 'var(--gold)' : 'var(--accent)';
+    numEl.textContent = `${Math.ceil(remainingMs / 1000)}s`;
   }, 100);
   pggCountdownTimeout = setTimeout(() => {
     submitPggRound(0, true);
@@ -1433,10 +1483,25 @@ function submitPggRound(contribution: number, isTimeout: boolean) {
   clearPggCountdown();
 
   const roundLog = pggEngine.submitContribution(contribution, isTimeout);
+  pggContribHistory.push(roundLog.totalPool / 4);
   // Coins land when the pool pays out; a timeout forfeits the round instead.
   if (isTimeout) playIncorrect(); else playBank();
   pggLastCumulative = roundLog.userCumulativePayoff;
-  renderGame4RoundResult(roundLog);
+  showPggContributionPopup(roundLog.userContribution, () => renderGame4RoundResult(roundLog));
+}
+
+// A brief "you contributed N coins" toast before the full round summary, so
+// the amount just chosen registers on its own before the pool math appears.
+function showPggContributionPopup(amount: number, onDone: () => void): void {
+  const popup = document.createElement('div');
+  popup.className = 'pgg-contrib-popup';
+  popup.innerHTML = `<img src="${pggCoinSrc}" alt="" class="pgg-contrib-popup-coin"><span>You contributed ${amount} coin${amount === 1 ? '' : 's'}</span>`;
+  document.body.appendChild(popup);
+  requestAnimationFrame(() => popup.classList.add('show'));
+  setTimeout(() => {
+    popup.classList.remove('show');
+    setTimeout(() => { popup.remove(); onDone(); }, 200);
+  }, 800);
 }
 
 // ---- Round result reveal screen ----
@@ -1444,23 +1509,25 @@ function renderGame4RoundResult(roundLog: PggRoundLog) {
   const app = document.getElementById('app')!;
   const isLastRound = pggEngine.isGameOver();
 
-  const aiCardsHTML = roundLog.aiContributions.map((ai) => `
+  const aiCardsHTML = roundLog.aiContributions.map((ai) => {
+    const info = PGG_ROLE_INFO[ai.role];
+    return `
     <div class="pgg-ai-card">
-      <span class="pgg-ai-emoji">${PGG_ROLE_EMOJI[ai.role] ?? '🙂'}</span>
-      <span class="pgg-ai-name">${ai.name}</span>
+      <img class="pgg-ai-avatar" src="${info.avatar}" alt="">
+      <span class="pgg-ai-name">${info.displayName}</span>
       <span class="pgg-ai-role">${ai.role}</span>
       <span class="pgg-ai-coins">${ai.contribution} <small>coins</small></span>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   app.innerHTML = `
-    <div class="screen pgg-result-screen">
+    <div class="screen pgg-result-screen" style="background-image:url('${pggBackgroundSrc()}')">
+      <p class="pgg-result-label">Round ${roundLog.roundIndex} Results ${roundLog.isTimeout ? '<span class="danger">(Timed out)</span>' : ''}</p>
       <div class="pgg-result-inner">
-        <p class="pgg-result-label">Round ${roundLog.roundIndex} Results ${roundLog.isTimeout ? '<span class="danger">(Timed out)</span>' : ''}</p>
-
         <div class="pgg-ai-panel">
           <div class="pgg-ai-card pgg-ai-card-user">
-            <span class="pgg-ai-emoji">🧑</span>
+            <img class="pgg-ai-avatar" src="${pggAvatarPlayerSrc}" alt="">
             <span class="pgg-ai-name">You</span>
             <span class="pgg-ai-role">Contributed</span>
             <span class="pgg-ai-coins">${roundLog.userContribution} <small>coins</small></span>
